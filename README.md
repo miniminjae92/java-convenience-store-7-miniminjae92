@@ -96,6 +96,20 @@
     ```zsh
     ./gradlew run
     ```
+## 프로젝트 구현 상세
+이 프로젝트는 상품 목록과 행사 목록을 파일 입출력을 통해 불러와 활용하며, 이를 위해 다음과 같은 리소스 파일을 사용합니다.
+
+### 파일 입출력
+- 상품 목록: src/main/resources/products.md
+- 행사 목록: src/main/resources/promotions.md
+- 위 두 파일의 형식을 유지한다면, 내용은 자유롭게 수정할 수 있습니다.
+- 상품과 행사 정보를 프로젝트에서 관리하기 위해 이 파일들을 통해 데이터를 로드합니다.
+
+### 라이브러리
+- 캠프 유틸 라이브러리: camp.nextstep.edu.missionutils 패키지에서 제공하는 API를 사용하여 필요한 기능을 구현합니다.
+- 현재 날짜 및 시간: camp.nextstep.edu.missionutils.DateTimes의 now() 메서드를 사용하여 현재 날짜와 시간을 가져옵니다.
+- 사용자 입력 처리: camp.nextstep.edu.missionutils.Console의 readLine() 메서드를 통해 사용자가 입력한 값을 읽어옵니다.
+- 이 프로젝트는 camp.nextstep.edu.missionutils 라이브러리를 적극 활용하여 날짜와 시간, 사용자 입력 처리를 표준화된 방식으로 진행합니다.
 
 ## 진행 방식 및 요구사항 (Workflow & Requirements)
 - **진행 방식**: 요구 사항에 따라 단계별로 기능을 구현하고, 각 기능 완료 후 커밋합니다.
