@@ -9,7 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CartTest {
-
     @Test
     @DisplayName("유효한 상품 추가")
     void addValidItem() {

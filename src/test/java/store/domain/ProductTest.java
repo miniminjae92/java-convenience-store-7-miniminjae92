@@ -7,7 +7,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ProductTest {
-
     @Test
     @DisplayName("유효한 상품 생성")
     void createValidProduct() {

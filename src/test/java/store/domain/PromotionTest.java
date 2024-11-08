@@ -11,7 +11,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class PromotionTest {
-
     @Test
     @DisplayName("유효한 프로모션 생성")
     void createValidPromotion() {
