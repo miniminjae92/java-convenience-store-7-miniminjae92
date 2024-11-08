@@ -1,21 +1,32 @@
 package store.domain;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Cart {
+    private final Map<String, Integer> items = new LinkedHashMap<>();
 
-    private Map<Product, Integer> items = new HashMap<>();
-
-    public void addItem(Product product, int quantity) {
-        items.put(product, items.getOrDefault(product, 0) + quantity);
+    public void addItem(String productName, int quantity) {
+        validateProductName(productName);
+        validateQuantity(quantity);
+        int currentQty = items.getOrDefault(productName, 0);
+        items.put(productName, currentQty + quantity);
     }
 
-    public Map<Product, Integer> getItems() {
-        return items;
+    private void validateProductName(String productName) {
+        if (productName == null || productName.isBlank()) {
+            throw new IllegalArgumentException("[ERROR] 상품명은 빈 값일 수 없습니다.");
+        }
     }
 
-    public Integer getQuantity(Product product) {
-        return items.getOrDefault(product, 0);
+    private void validateQuantity(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("[ERROR] 수량은 0보다 커야 합니다.");
+        }
+    }
+
+    public Map<String, Integer> getItems() {
+        return Collections.unmodifiableMap(items);
     }
 }
