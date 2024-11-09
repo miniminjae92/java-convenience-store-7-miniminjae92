@@ -1,5 +1,6 @@
 package store.repository;
 
+import java.util.Map;
 import store.domain.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,81 +16,79 @@ class ProductRepositoryTest {
     @BeforeEach
     void setUp() {
         productRepository = new ProductRepository();
-        cola = new Product("콜라", 1000);
-        cider = new Product("사이다", 1000);
+        cola = new Product("콜라", 1000, 10, "탄산2+1");
+        cider = new Product("사이다", 1000, 8, "null");
     }
 
     @Test
-    @DisplayName("상품 추가 및 조회 테스트 - 일반 재고")
-    void addAndRetrieveProductGeneralStock() {
-        productRepository.addProduct(cola, 10, false);
-        Product retrieved = productRepository.getProduct("콜라");
+    @DisplayName("상품 저장 및 조회 테스트")
+    void saveAndFindProduct() {
+        productRepository.save(cola);
+
+        Product retrieved = productRepository.findByName("콜라");
         assertThat(retrieved).isEqualTo(cola);
-        assertThat(productRepository.getGeneralStock("콜라")).isEqualTo(10);
-        assertThat(productRepository.getPromotionStock("콜라")).isEqualTo(0);
-    }
-
-    @Test
-    @DisplayName("상품 추가 및 조회 테스트 - 프로모션 재고")
-    void addAndRetrieveProductPromotionStock() {
-        productRepository.addProduct(cider, 5, true);
-        Product retrieved = productRepository.getProduct("사이다");
-        assertThat(retrieved).isEqualTo(cider);
-        assertThat(productRepository.getGeneralStock("사이다")).isEqualTo(0);
-        assertThat(productRepository.getPromotionStock("사이다")).isEqualTo(5);
     }
 
     @Test
     @DisplayName("존재하지 않는 상품 조회 시 예외 발생")
-    void getNonExistentProductThrowsException() {
-        assertThatThrownBy(() -> productRepository.getProduct("에너지바"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("[ERROR] 존재하지 않는 상품입니다.");
+    void findNonExistentProductThrowsException() {
+        assertThatThrownBy(() -> productRepository.findByName("에너지바"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("상품 재고 감소 테스트 - 일반 재고")
-    void reduceProductStockGeneral() {
-        productRepository.addProduct(cola, 10, false);
-        productRepository.reduceStock("콜라", 2, false);
-        assertThat(productRepository.getGeneralStock("콜라")).isEqualTo(8);
+    @DisplayName("상품 전체 조회 테스트")
+    void findAllProducts() {
+        productRepository.save(cola);
+        productRepository.save(cider);
+
+        Map<String, Product> allProducts = productRepository.findAll();
+        assertThat(allProducts).hasSize(2);
+        assertThat(allProducts).containsKey("콜라");
+        assertThat(allProducts).containsKey("사이다");
     }
 
     @Test
-    @DisplayName("상품 재고 감소 테스트 - 프로모션 재고")
-    void reduceProductStockPromotion() {
-        productRepository.addProduct(cider, 5, true);
-        productRepository.reduceStock("사이다", 3, true);
-        assertThat(productRepository.getPromotionStock("사이다")).isEqualTo(2);
+    @DisplayName("상품 업데이트 테스트")
+    void updateProduct() {
+        productRepository.save(cola);
+
+        Product updatedCola = new Product("콜라", 1200, 10, "탄산2+1");
+        productRepository.update("콜라", updatedCola);
+
+        Product retrieved = productRepository.findByName("콜라");
+        assertThat(retrieved).isEqualTo(updatedCola);
     }
 
     @Test
-    @DisplayName("재고 부족 시 일반 재고 감소 시 예외 발생")
-    void reduceGeneralStockInsufficient() {
-        productRepository.addProduct(cola, 3, false);
-        assertThatThrownBy(() -> productRepository.reduceStock("콜라", 5, false))
+    @DisplayName("존재하지 않는 상품 업데이트 시 예외 발생")
+    void updateNonExistentProductThrowsException() {
+        assertThatThrownBy(() -> productRepository.update("에너지바", cider))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("[ERROR] 일반 재고가 부족합니다.");
+                .hasMessage("[ERROR] 해당 이름의 상품이 존재하지 않습니다: 에너지바");
     }
 
     @Test
-    @DisplayName("재고 부족 시 프로모션 재고 감소 시 예외 발생")
-    void reducePromotionStockInsufficient() {
-        productRepository.addProduct(cider, 3, true);
-        assertThatThrownBy(() -> productRepository.reduceStock("사이다", 5, true))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("[ERROR] 프로모션 재고가 부족합니다.");
+    @DisplayName("상품 삭제 테스트")
+    void deleteProduct() {
+        assertThatThrownBy(() -> productRepository.delete("콜라"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    @DisplayName("다중 상품 추가 및 재고 조회 테스트")
-    void addMultipleProductsAndCheckStocks() {
-        productRepository.addProduct(cola, 10, false);
-        productRepository.addProduct(cider, 5, true);
-        productRepository.addProduct(cola, 5, true);
+    @DisplayName("상품이 존재하지 않으면 삭제 시 예외 발생")
+    void deleteNonExistentProductThrowsException() {
+        assertThatThrownBy(() -> productRepository.delete("에너지바"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 
-        assertThat(productRepository.getGeneralStock("콜라")).isEqualTo(10);
-        assertThat(productRepository.getPromotionStock("콜라")).isEqualTo(5);
-        assertThat(productRepository.getPromotionStock("사이다")).isEqualTo(5);
+    @Test
+    @DisplayName("모든 상품 삭제 테스트")
+    void deleteAllProducts() {
+        productRepository.save(cola);
+        productRepository.save(cider);
+
+        productRepository.deleteAll();
+        assertThat(productRepository.findAll()).isEmpty();
     }
 }

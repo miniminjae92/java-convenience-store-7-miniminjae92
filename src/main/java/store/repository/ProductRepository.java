@@ -2,78 +2,44 @@ package store.repository;
 
 import store.domain.Product;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ProductRepository {
     private final Map<String, Product> products = new HashMap<>();
-    private final Map<String, Integer> generalStock = new HashMap<>();
-    private final Map<String, Integer> promotionStock = new HashMap<>();
 
-    public void addProduct(Product product, int quantity, boolean isPromotion) {
-        String name = product.getName();
-        products.putIfAbsent(name, product);
+    public void save(Product product) {
+        products.put(product.getName(), product);
+    }
 
-        if (!isPromotion) {
-            addGeneralStock(name, quantity);
+    public Product findByName(String name) {
+        Product product = products.get(name);
+        if (product == null) {
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + name);
         }
+        return product;
+    }
 
-        if (isPromotion) {
-            addPromotionStock(name, quantity);
+    public Map<String, Product> findAll() {
+        return new HashMap<>(products);
+    }
+
+    public void update(String name, Product updatedProduct) {
+        if (products.containsKey(name)) {
+            products.put(name, updatedProduct);
+        } else {
+            throw new IllegalStateException("[ERROR] 해당 이름의 상품이 존재하지 않습니다: " + name);
         }
     }
 
-    private void addGeneralStock(String name, int quantity) {
-        generalStock.put(name, generalStock.getOrDefault(name, 0) + quantity);
-    }
-
-    private void addPromotionStock(String name, int quantity) {
-        promotionStock.put(name, promotionStock.getOrDefault(name, 0) + quantity);
-    }
-
-    public Product getProduct(String name) {
+    public void delete(String name) {
         if (!products.containsKey(name)) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다.");
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품이므로 삭제할 수 없습니다: " + name);
         }
-        return products.get(name);
+        products.remove(name);
     }
 
-    public int getGeneralStock(String name) {
-        return generalStock.getOrDefault(name, 0);
-    }
-
-    public int getPromotionStock(String name) {
-        return promotionStock.getOrDefault(name, 0);
-    }
-
-    public void reduceStock(String name, int quantity, boolean isPromotion) {
-        if (!isPromotion) {
-            reduceGeneralStock(name, quantity);
-        }
-
-        if (isPromotion) {
-            reducePromotionStock(name, quantity);
-        }
-    }
-
-    private void reduceGeneralStock(String name, int quantity) {
-        int currentQty = generalStock.getOrDefault(name, 0);
-        if (currentQty < quantity) {
-            throw new IllegalStateException("[ERROR] 일반 재고가 부족합니다.");
-        }
-        generalStock.put(name, currentQty - quantity);
-    }
-
-    private void reducePromotionStock(String name, int quantity) {
-        int currentQty = promotionStock.getOrDefault(name, 0);
-        if (currentQty < quantity) {
-            throw new IllegalStateException("[ERROR] 프로모션 재고가 부족합니다.");
-        }
-        promotionStock.put(name, currentQty - quantity);
-    }
-
-    public Map<String, Product> getProducts() {
-        return Collections.unmodifiableMap(products);
+    public void deleteAll() {
+        products.clear();
     }
 }

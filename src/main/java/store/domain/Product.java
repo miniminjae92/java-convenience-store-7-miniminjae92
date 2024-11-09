@@ -3,12 +3,16 @@ package store.domain;
 public class Product {
     private final String name;
     private final int price;
+    private final int stock;
+    private final String promotionName;
 
-    public Product(String name, int price) {
+    public Product(String name, int price, int stock, String promotionName) {
         validateName(name);
         validatePrice(price);
         this.name = name;
         this.price = price;
+        this.stock = stock;
+        this.promotionName = promotionName;
     }
 
     public String getName() {
@@ -17,6 +21,14 @@ public class Product {
 
     public int getPrice() {
         return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public String getPromotionName() {
+        return promotionName;
     }
 
     private void validateName(String name) {
