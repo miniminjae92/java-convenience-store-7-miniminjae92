@@ -31,14 +31,14 @@ class CheckoutServiceTest {
     @DisplayName("총 금액 계산 테스트")
     void calculateTotalAmount() {
         Cart cart = new Cart();
-        Product cola = new Product("콜라", 1000, 10, "null");
-        Product cider = new Product("사이다", 1200, 8, "null");
+        Product cola = new Product("콜라", 1000, 10);
+        Product cider = new Product("사이다", 1200, 8);
         cart.addItem(cola, 2);
         cart.addItem(cider, 3);
 
         int totalAmount = checkoutService.calculateTotalAmount(cart);
 
-        assertThat(totalAmount).isEqualTo(1000 * 2 + 1200 * 3); // 콜라와 사이다의 가격 기준
+        assertThat(totalAmount).isEqualTo(1000 * 2 + 1200 * 3);
     }
 }
 

@@ -11,6 +11,10 @@ public class PromotionProduct extends Product {
         this.promotionType = promotionType;
     }
 
+    public String getPromotionType() {
+        return promotionType;
+    }
+
     public void reducePromotionStock(int quantity) {
         if (quantity > stock) {
             throw new IllegalArgumentException("[ERROR] 프로모션 재고가 부족합니다.");
