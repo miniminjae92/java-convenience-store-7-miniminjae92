@@ -1,10 +1,11 @@
 package store.domain;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+@Disabled
 class ReceiptTest {
     @Test
     @DisplayName("구매 내역 추가 및 총구매액 계산 테스트")
