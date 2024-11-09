@@ -1,17 +1,18 @@
 package store.config;
 
-import java.util.Arrays;
 import store.domain.Product;
 import store.domain.Promotion;
+import store.domain.PromotionProduct;
 import store.repository.ProductRepository;
 import store.repository.PromotionRepository;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Arrays;
 
 public class DataLoader {
-
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
 
@@ -27,9 +28,7 @@ public class DataLoader {
 
     private void loadPromotions(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            br.lines()
-                    .skip(1) // Skip header line
-                    .forEach(this::processPromotion);
+            br.lines().skip(1).forEach(this::processPromotion);
         } catch (IOException e) {
             throw new IllegalStateException("[ERROR] 파일을 읽는 중 문제가 발생했습니다.", e);
         }
@@ -37,9 +36,7 @@ public class DataLoader {
 
     private void loadProducts(String filePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            br.lines()
-                    .skip(1) // Skip header line
-                    .forEach(this::processProduct);
+            br.lines().skip(1).forEach(this::processProduct);
         } catch (IOException e) {
             throw new IllegalStateException("[ERROR] 파일을 읽는 중 문제가 발생했습니다.", e);
         }
@@ -62,31 +59,36 @@ public class DataLoader {
         String name = data[0];
         int price = Integer.parseInt(data[1]);
         int quantity = Integer.parseInt(data[2]);
-        String promotionName = data[3];
 
-        Product product = new Product(name, price, quantity, promotionName);
+        Product product = createProduct(name, price, quantity, data[3]);
+        saveProduct(product);
+    }
+
+    private Product createProduct(String name, int price, int quantity, String promotionType) {
+        if ("null".equals(promotionType)) {
+            return new Product(name, price, quantity);
+        }
+        return new PromotionProduct(name, price, quantity, promotionType);
+    }
+
+    private void saveProduct(Product product) {
+        if (isPromotionProduct(product)) {
+            productRepository.savePromotion((PromotionProduct) product);
+            return;
+        }
         productRepository.save(product);
+    }
+
+    private boolean isPromotionProduct(Product product) {
+        return product instanceof PromotionProduct;
     }
 
     private String[] parseData(String line, int expectedSize) {
         String[] data = line.split(",");
-        validateDataSize(data, expectedSize);
-
-        return Arrays.stream(data)
-                .map(String::trim)
-                .peek(this::validateEmpty)
-                .toArray(String[]::new);
-    }
-
-    private void validateDataSize(String[] data, int expectedSize) {
         if (data.length != expectedSize) {
             throw new IllegalArgumentException("[ERROR] 데이터 형식이 잘못되었습니다.");
         }
-    }
 
-    private void validateEmpty(String item) {
-        if (item.isBlank()) {
-            throw new IllegalArgumentException("[ERROR] 데이터에 빈 값이 포함되어 있습니다.");
-        }
+        return Arrays.stream(data).map(String::trim).toArray(String[]::new);
     }
 }

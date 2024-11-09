@@ -1,8 +1,11 @@
 package store;
 
 import store.config.DataLoader;
+import store.controller.StoreController;
 import store.repository.ProductRepository;
 import store.repository.PromotionRepository;
+import store.service.ProductService;
+import store.view.OutputView;
 
 public class Application {
     public static void main(String[] args) {
@@ -15,6 +18,11 @@ public class Application {
         String promotionFilePath = "src/main/resources/promotions.md";
 
         dataLoader.initializeData(productFilePath, promotionFilePath);
+
+        ProductService productService = new ProductService(productRepository);
+        OutputView outputView = new OutputView();
+        StoreController storeController = new StoreController(productService, outputView);
+
+        storeController.displayAvailableProducts();
     }
 }
-
