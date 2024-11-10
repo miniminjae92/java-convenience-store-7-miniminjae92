@@ -1,6 +1,9 @@
 package store.view;
 
+import java.util.Map;
+import store.common.FormatMessage;
 import store.common.PrintMessage;
+import store.domain.Product;
 import store.dto.ProductDTO;
 import java.util.List;
 
@@ -16,9 +19,13 @@ public class OutputView {
 
     public void displayProducts(List<ProductDTO> products) {
         for (ProductDTO product : products) {
-            System.out.println(PrintMessage.PRODUCT_INFO_FORMAT.format(
+            System.out.println(FormatMessage.PRODUCT_INFO.format(
                     product.getName(), product.getPrice(), product.getStockInfo(), product.getPromotionInfo()
             ));
         }
+    }
+
+    public void displayError(String errorMessage) {
+        System.out.println(errorMessage);
     }
 }

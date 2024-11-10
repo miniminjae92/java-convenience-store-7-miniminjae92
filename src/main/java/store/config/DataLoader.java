@@ -1,5 +1,8 @@
 package store.config;
 
+import store.common.Constants;
+import store.common.ErrorMessage;
+import store.common.StringUtils;
 import store.domain.Product;
 import store.domain.Promotion;
 import store.domain.PromotionProduct;
@@ -10,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.Arrays;
 
 public class DataLoader {
     private final ProductRepository productRepository;
@@ -30,7 +32,7 @@ public class DataLoader {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             br.lines().skip(1).forEach(this::processPromotion);
         } catch (IOException e) {
-            throw new IllegalStateException("[ERROR] 파일을 읽는 중 문제가 발생했습니다.", e);
+            throw new IllegalStateException(ErrorMessage.FILE_READ_ERROR.getMessage(), e);
         }
     }
 
@@ -38,12 +40,12 @@ public class DataLoader {
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             br.lines().skip(1).forEach(this::processProduct);
         } catch (IOException e) {
-            throw new IllegalStateException("[ERROR] 파일을 읽는 중 문제가 발생했습니다.", e);
+            throw new IllegalStateException(ErrorMessage.FILE_READ_ERROR.getMessage(), e);
         }
     }
 
     private void processPromotion(String line) {
-        String[] data = parseData(line, 5);
+        String[] data = StringUtils.parseData(line, 5);
         String name = data[0];
         int buy = Integer.parseInt(data[1]);
         int get = Integer.parseInt(data[2]);
@@ -55,7 +57,7 @@ public class DataLoader {
     }
 
     private void processProduct(String line) {
-        String[] data = parseData(line, 4);
+        String[] data = StringUtils.parseData(line, 4);
         String name = data[0];
         int price = Integer.parseInt(data[1]);
         int quantity = Integer.parseInt(data[2]);
@@ -65,7 +67,7 @@ public class DataLoader {
     }
 
     private Product createProduct(String name, int price, int quantity, String promotionType) {
-        if ("null".equals(promotionType)) {
+        if (Constants.NO_PROMOTION.equals(promotionType)) {
             return new Product(name, price, quantity);
         }
         return new PromotionProduct(name, price, quantity, promotionType);
@@ -81,14 +83,5 @@ public class DataLoader {
 
     private boolean isPromotionProduct(Product product) {
         return product instanceof PromotionProduct;
-    }
-
-    private String[] parseData(String line, int expectedSize) {
-        String[] data = line.split(",");
-        if (data.length != expectedSize) {
-            throw new IllegalArgumentException("[ERROR] 데이터 형식이 잘못되었습니다.");
-        }
-
-        return Arrays.stream(data).map(String::trim).toArray(String[]::new);
     }
 }

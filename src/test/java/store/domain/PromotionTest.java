@@ -91,9 +91,10 @@ class PromotionTest {
         LocalDate end = LocalDate.now().plusDays(5);
         Promotion promotion = new Promotion("탄산2+1", 2, 1, start, end);
 
-        int[] result = promotion.calculatePromotion(quantity);
+        int payableQuantity = promotion.calculatePayableQuantity(quantity);
+        int FreeQuantity = promotion.calculateFreeQuantity(quantity);
 
-        assertThat(result[0]).isEqualTo(expectedPayable);
-        assertThat(result[1]).isEqualTo(expectedFree);
+        assertThat(payableQuantity).isEqualTo(expectedPayable);
+        assertThat(FreeQuantity).isEqualTo(expectedFree);
     }
 }

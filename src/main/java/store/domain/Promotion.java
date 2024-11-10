@@ -22,13 +22,27 @@ public class Promotion {
         return !currentTime.isBefore(startDate) && !currentTime.isAfter(endDate);
     }
 
-    public int[] calculatePromotion(int quantity) {
+    public int calculatePayableQuantity(int quantity) {
+        return calculatePromotion(quantity)[0];
+    }
+
+    public int calculateFreeQuantity(int quantity) {
+        return calculatePromotion(quantity)[1];
+    }
+
+    private int[] calculatePromotion(int quantity) {
         int totalUnit = buyQuantity + freeQuantity;
         int promoSets = quantity / totalUnit;
         int remaining = quantity % totalUnit;
         int payableQuantity = promoSets * buyQuantity + remaining;
         int freeQuantityTotal = promoSets * freeQuantity;
         return new int[]{payableQuantity, freeQuantityTotal};
+    }
+
+    private void validateQuantities(int buyQuantity, int freeQuantity) {
+        if (buyQuantity <= 0 || freeQuantity <= 0) {
+            throw new IllegalArgumentException("[ERROR] 프로모션 수량은 0보다 커야 합니다.");
+        }
     }
 
     public String getName() {
@@ -49,11 +63,5 @@ public class Promotion {
 
     public LocalDate getEndDate() {
         return endDate;
-    }
-
-    private void validateQuantities(int buyQuantity, int freeQuantity) {
-        if (buyQuantity <= 0 || freeQuantity <= 0) {
-            throw new IllegalArgumentException("[ERROR] 프로모션 수량은 0보다 커야 합니다.");
-        }
     }
 }

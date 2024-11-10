@@ -1,7 +1,6 @@
 package store.repository;
 
 import store.domain.Promotion;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +12,11 @@ public class PromotionRepository {
     }
 
     public Promotion findByName(String name) {
-        return promotions.get(name);
+        Promotion promotion = promotions.get(name);
+        if (promotion == null) {
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 프로모션입니다: " + name);
+        }
+        return promotion;
     }
 
     public Map<String, Promotion> findAll() {
@@ -21,14 +24,16 @@ public class PromotionRepository {
     }
 
     public void update(String name, Promotion updatedPromotion) {
-        if (promotions.containsKey(name)) {
-            promotions.put(name, updatedPromotion);
-        } else {
-            throw new IllegalStateException("해당 이름의 프로모션이 존재하지 않습니다: " + name);
+        if (!promotions.containsKey(name)) {
+            throw new IllegalStateException("[ERROR] 해당 이름의 프로모션이 존재하지 않습니다: " + name);
         }
+        promotions.put(name, updatedPromotion);
     }
 
     public void delete(String name) {
+        if (!promotions.containsKey(name)) {
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 프로모션입니다: " + name);
+        }
         promotions.remove(name);
     }
 
@@ -36,4 +41,3 @@ public class PromotionRepository {
         promotions.clear();
     }
 }
-

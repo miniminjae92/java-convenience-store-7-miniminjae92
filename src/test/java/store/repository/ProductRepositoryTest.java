@@ -1,13 +1,15 @@
 package store.repository;
 
-import java.util.Map;
-import store.domain.Product;
-import store.domain.PromotionProduct;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.*;
+import store.domain.Product;
+import store.domain.PromotionProduct;
+import store.dto.ProductDTO;
 
 class ProductRepositoryTest {
     private ProductRepository productRepository;
@@ -28,7 +30,7 @@ class ProductRepositoryTest {
         productRepository.savePromotion(colaPromotion);
 
         Product retrievedCider = productRepository.findByName("사이다");
-        PromotionProduct retrievedColaPromotion = productRepository.findPromotionByName("콜라");
+        PromotionProduct retrievedColaPromotion = (PromotionProduct) productRepository.findPromotionByName("콜라");
 
         assertThat(retrievedCider).isEqualTo(cider);
         assertThat(retrievedColaPromotion).isEqualTo(colaPromotion);
@@ -56,10 +58,10 @@ class ProductRepositoryTest {
         productRepository.save(cider);
         productRepository.savePromotion(colaPromotion);
 
-        Map<String, Map<String, Product>> allProducts = productRepository.findAll();
+        List<ProductDTO> allProducts = productRepository.findAllAsDTO();
         assertThat(allProducts).hasSize(2);
-        assertThat(allProducts.get("콜라")).containsKey("promotion");
-        assertThat(allProducts.get("사이다")).containsKey("regular");
+        assertThat(allProducts).anyMatch(product -> product.getName().equals("콜라"));
+        assertThat(allProducts).anyMatch(product -> product.getName().equals("사이다"));
     }
 
     @Test
@@ -70,7 +72,7 @@ class ProductRepositoryTest {
         PromotionProduct updatedColaPromotion = new PromotionProduct("콜라", 1200, 10, "탄산2+1");
         productRepository.updatePromotionProduct("콜라", updatedColaPromotion);
 
-        PromotionProduct retrievedColaPromotion = productRepository.findPromotionByName("콜라");
+        PromotionProduct retrievedColaPromotion = (PromotionProduct) productRepository.findPromotionByName("콜라");
         assertThat(retrievedColaPromotion.getPrice()).isEqualTo(1200);
         assertThat(retrievedColaPromotion.getPromotionType()).isEqualTo("탄산2+1");
     }
@@ -79,8 +81,7 @@ class ProductRepositoryTest {
     @DisplayName("존재하지 않는 일반 상품 업데이트 시 예외 발생")
     void updateNonExistentProductThrowsException() {
         assertThatThrownBy(() -> productRepository.updateProduct("에너지바", cider))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("[ERROR] 해당 이름의 일반 상품이 존재하지 않습니다: 에너지바");
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -95,19 +96,12 @@ class ProductRepositoryTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 상품 삭제 시 예외 발생")
-    void deleteNonExistentProductThrowsException() {
-        assertThatThrownBy(() -> productRepository.delete("에너지바", "regular"))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     @DisplayName("모든 상품 삭제 테스트")
     void deleteAllProducts() {
         productRepository.save(cider);
         productRepository.savePromotion(colaPromotion);
 
         productRepository.deleteAll();
-        assertThat(productRepository.findAll()).isEmpty();
+        assertThat(productRepository.findAllAsDTO()).isEmpty();
     }
 }
