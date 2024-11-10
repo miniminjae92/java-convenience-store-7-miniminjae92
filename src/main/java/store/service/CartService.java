@@ -1,8 +1,13 @@
 package store.service;
 
+import java.util.Map.Entry;
 import store.domain.Cart;
 import store.domain.Product;
 import store.repository.ProductRepository;
+import java.util.LinkedHashMap;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CartService {
     private final Cart cart;
@@ -14,26 +19,30 @@ public class CartService {
     }
 
     public void addItemToCart(String productName, int quantity) {
-        Product product = getProductByName(productName);
-        validateStock(product, quantity);
+        Product product = productRepository.findByName(productName);
         cart.addItem(product, quantity);
     }
 
-    private Product getProductByName(String productName) {
+    public void updateItemQuantity(String productName, int quantity) {
         Product product = productRepository.findByName(productName);
-        if (product == null) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
-        }
-        return product;
+        cart.updateItemQuantity(product, quantity);
     }
 
-    private void validateStock(Product product, int quantity) {
-        if (product.getStock() < quantity) {
-            throw new IllegalArgumentException("[ERROR] 재고 수량을 초과하여 구매할 수 없습니다: " + product.getName());
-        }
+    public Map<Product, Integer> getItems() {
+        return cart.getItems();
     }
 
-    public Cart getCart() {
-        return cart;
+    public Map<String, Integer> getCartItems() {
+        return cart.getItems().entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().getName(), // 이름만 키로 사용
+                        Entry::getValue,
+                        Integer::sum, // 중복 키 발생 시 수량을 합산
+                        LinkedHashMap::new // 순서를 유지하는 LinkedHashMap 사용
+                ));
+    }
+
+    public void clearCart() {
+        cart.clear();
     }
 }

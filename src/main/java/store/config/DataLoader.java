@@ -12,7 +12,7 @@ import store.repository.PromotionRepository;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class DataLoader {
     private final ProductRepository productRepository;
@@ -49,8 +49,8 @@ public class DataLoader {
         String name = data[0];
         int buy = Integer.parseInt(data[1]);
         int get = Integer.parseInt(data[2]);
-        LocalDate startDate = LocalDate.parse(data[3]);
-        LocalDate endDate = LocalDate.parse(data[4]);
+        LocalDateTime startDate = LocalDateTime.parse(data[3] + "T00:00:00");
+        LocalDateTime endDate = LocalDateTime.parse(data[4] + "T00:00:00");
 
         Promotion promotion = new Promotion(name, buy, get, startDate, endDate);
         promotionRepository.save(promotion);

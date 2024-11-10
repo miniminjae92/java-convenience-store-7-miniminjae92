@@ -1,16 +1,16 @@
 package store.domain;
 
-import java.time.LocalDate;
+import camp.nextstep.edu.missionutils.DateTimes;
+import java.time.LocalDateTime;
 
 public class Promotion {
     private final String name;
     private final int buyQuantity;
     private final int freeQuantity;
-    private final LocalDate startDate;
-    private final LocalDate endDate;
+    private final LocalDateTime startDate;
+    private final LocalDateTime endDate;
 
-    public Promotion(String name, int buyQuantity, int freeQuantity, LocalDate startDate, LocalDate endDate) {
-        validateQuantities(buyQuantity, freeQuantity);
+    public Promotion(String name, int buyQuantity, int freeQuantity, LocalDateTime startDate, LocalDateTime endDate) {
         this.name = name;
         this.buyQuantity = buyQuantity;
         this.freeQuantity = freeQuantity;
@@ -18,7 +18,8 @@ public class Promotion {
         this.endDate = endDate;
     }
 
-    public boolean isActive(LocalDate currentTime) {
+    public boolean isActive() {
+        LocalDateTime currentTime = DateTimes.now();
         return !currentTime.isBefore(startDate) && !currentTime.isAfter(endDate);
     }
 
@@ -57,11 +58,11 @@ public class Promotion {
         return freeQuantity;
     }
 
-    public LocalDate getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public LocalDate getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 }

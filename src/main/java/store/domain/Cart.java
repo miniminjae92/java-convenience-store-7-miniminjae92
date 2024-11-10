@@ -15,6 +15,14 @@ public class Cart {
         items.put(product, currentQty + quantity);
     }
 
+    public void updateItemQuantity(Product product, int newQuantity) {
+        if (newQuantity <= 0) {
+            items.remove(product);  // 수량이 0 이하이면 상품을 삭제
+        } else {
+            items.put(product, newQuantity);  // 수량을 새 값으로 업데이트
+        }
+    }
+
     public void addFreeItem(Product product, int quantity) {
         validateQuantity(quantity);
         int currentFreeQty = freeItems.getOrDefault(product, 0);
@@ -35,6 +43,16 @@ public class Cart {
 
     public int getQuantity(Product product) {
         return items.getOrDefault(product, 0);
+    }
+
+    public void updateQuantityForPromotion(Product product, int quantity) {
+        if (items.containsKey(product)) {
+            items.put(product, quantity);
+        }
+    }
+
+    public void clear() {
+        items.clear();
     }
 
     private void validateQuantity(int quantity) {

@@ -1,3 +1,4 @@
+
 package store.service;
 
 import store.dto.ProductDTO;
@@ -17,7 +18,14 @@ public class ProductService {
         return productRepository.findAllAsDTO();
     }
 
-    public Product getProductByName(String productName) {
-        return productRepository.findByName(productName);
+    public int getProductPrice(String productName) {
+        Product product = productRepository.findByName(productName);
+        return product.getPrice();
+    }
+
+    public void validateAndReduceStock(String productName, int quantity) {
+        Product product = productRepository.findByName(productName);
+        product.reduceStock(quantity);
+        productRepository.updateProduct(productName, product);
     }
 }

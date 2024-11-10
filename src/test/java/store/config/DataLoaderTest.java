@@ -1,5 +1,6 @@
 package store.config;
 
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,6 @@ class DataLoaderTest {
         Promotion promotion = promotionRepository.findByName("탄산2+1");
         assertThat(promotion).isNotNull();
         assertThat(promotion.getBuyQuantity()).isEqualTo(2);
-        assertThat(promotion.getStartDate()).isEqualTo(LocalDate.parse("2024-01-01"));
+        assertThat(promotion.getStartDate()).isEqualTo(LocalDateTime.parse("2024-01-01" + "T00:00:00"));
     }
 }

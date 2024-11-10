@@ -1,3 +1,4 @@
+
 package store.repository;
 
 import java.util.ArrayList;
@@ -31,11 +32,23 @@ public class ProductRepository {
     }
 
     public Product findByName(String name) {
-        Product product = products.getOrDefault(name, Collections.emptyMap()).get(REGULAR);
-        if (product == null) {
+        Map<String, Product> productTypes = products.get(name);
+
+        if (productTypes == null) {
             throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + name);
         }
-        return product;
+
+        Product promotionProduct = productTypes.get(PROMOTION);
+        if (promotionProduct != null) {
+            return promotionProduct;
+        }
+
+        Product regularProduct = productTypes.get(REGULAR);
+        if (regularProduct != null) {
+            return regularProduct;
+        }
+
+        throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + name);
     }
 
     public PromotionProduct findPromotionByName(String name) {

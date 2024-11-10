@@ -1,43 +1,87 @@
 package store.service;
 
-import camp.nextstep.edu.missionutils.DateTimes;
-import store.domain.Cart;
 import store.domain.Product;
 import store.domain.Promotion;
+import store.domain.PromotionProduct;
+import store.domain.PromotionResult;
+import store.repository.ProductRepository;
 import store.repository.PromotionRepository;
 
-public class PromotionService {
-    private final PromotionRepository promotionRepository;
+import java.util.ArrayList;
+import java.util.List;
 
-    public PromotionService(PromotionRepository promotionRepository) {
+public class PromotionService {
+    private final ProductRepository productRepository;
+    private final PromotionRepository promotionRepository;
+    private final List<String> freeItems = new ArrayList<>();
+
+    public PromotionService(ProductRepository productRepository, PromotionRepository promotionRepository) {
+        this.productRepository = productRepository;
         this.promotionRepository = promotionRepository;
     }
 
-    public int applyPromotions(Cart cart) {
-        int totalDiscount = 0;
-        for (Product product : cart.getProducts()) {
-            totalDiscount += applyPromotionToProduct(cart, product);
+    public PromotionResult applyPromotion(String productName, int quantity) {
+        Product product = productRepository.findByName(productName);
+
+        if (!(product instanceof PromotionProduct)) {
+            return PromotionResult.noPromotion(product.getPrice() * quantity);
         }
-        return totalDiscount;
-    }
 
-    private int applyPromotionToProduct(Cart cart, Product product) {
-        Promotion promotion = getActivePromotion(product);
-        if (promotion == null) {
-            return 0;
+        PromotionProduct promotionProduct = (PromotionProduct) product;
+        Promotion promotion = promotionRepository.findByName(promotionProduct.getPromotionType());
+
+        if (promotion == null || !promotion.isActive()) {
+            return PromotionResult.noPromotion(promotionProduct.getPrice() * quantity);
         }
-        int freeQuantity = calculateFreeQuantity(promotion, cart.getQuantity(product));
-        cart.addFreeItem(product, freeQuantity);
-        return freeQuantity * product.getPrice();
+
+        int promoStock = promotionProduct.getPromotionStock();
+        int requiredQuantityForPromo = promotion.getBuyQuantity();
+        int freeQuantity = promotion.calculateFreeQuantity(quantity);
+        int discountAmount = freeQuantity * promotionProduct.getPrice();
+        int finalAmount = (promotionProduct.getPrice() * quantity) - discountAmount;
+
+        if (quantity >= requiredQuantityForPromo && promoStock >= quantity) {
+            addFreeItems(productName, freeQuantity);
+            promotionProduct.reducePromotionStock(quantity);
+            return new PromotionResult(
+                    true,
+                    false,
+                    false,
+                    0,
+                    0,
+                    freeQuantity,
+                    discountAmount,
+                    finalAmount
+            );
+        }
+
+        if (promoStock < quantity) {
+            int nonPromoQuantity = quantity - promoStock;
+            freeQuantity = promotion.calculateFreeQuantity(promoStock);
+            addFreeItems(productName, freeQuantity);
+            promotionProduct.reducePromotionStock(promoStock);
+            return new PromotionResult(
+                    true,
+                    false,
+                    false,
+                    0,
+                    0,
+                    freeQuantity,
+                    discountAmount,
+                    finalAmount
+            );
+        }
+
+        return PromotionResult.noPromotion(promotionProduct.getPrice() * quantity);
     }
 
-    private Promotion getActivePromotion(Product product) {
-        return promotionRepository.findByName(product.getPromotionType())
-                .filter(promo -> promo.isActive(DateTimes.now()))
-                .orElse(null);
+    public List<String> getFreeItems() {
+        return new ArrayList<>(freeItems);
     }
 
-    private int calculateFreeQuantity(Promotion promotion, int quantity) {
-        return promotion.calculateFreeQuantity(quantity);
+    private void addFreeItems(String productName, int quantity) {
+        for (int i = 0; i < quantity; i++) {
+            freeItems.add(productName);
+        }
     }
 }
