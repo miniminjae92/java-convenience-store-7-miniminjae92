@@ -3,7 +3,8 @@ package store.validator;
 import store.common.ErrorMessage;
 
 public class InputValidator {
-    private static final String PRODUCT_FORMAT_REGEX = "\\[[가-힣a-zA-Z]+-\\d+](,\\[[가-힣a-zA-Z]+-\\d+])*";
+    private static final String PRODUCT_FORMAT_REGEX = "\\s*\\[[가-힣a-zA-Z]+-\\d+\\]\\s*(,\\s*\\[[가-힣a-zA-Z]+-\\d+\\]\\s*)*";
+
 
     public static void validateFormat(String input) {
         if (input == null || input.isBlank()) {
