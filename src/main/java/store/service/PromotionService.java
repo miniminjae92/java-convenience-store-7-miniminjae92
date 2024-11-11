@@ -1,4 +1,3 @@
-// PromotionService.java
 package store.service;
 
 import store.domain.Product;
@@ -14,12 +13,12 @@ public class PromotionService {
     }
 
     public PromotionResult applyPromotion(Product product, int quantity) {
-        if (product.getPromotionType() == null || product.getPromotionType().equalsIgnoreCase("null")) {
+        if (!isPromotionApplicable(product)) {
             return PromotionResult.noPromotion(product.getPrice() * quantity, quantity);
         }
 
         Promotion promotion = promotionRepository.findByType(product.getPromotionType());
-        if (promotion == null || !promotion.isActive()) {
+        if (!isActivePromotion(promotion)) {
             return PromotionResult.noPromotion(product.getPrice() * quantity, quantity);
         }
 
@@ -30,29 +29,45 @@ public class PromotionService {
         int availableStock = product.getStock();
 
         boolean hasInsufficientPromoStock = availableStock < totalPromoItemsNeeded;
-        int nonPromoQuantity = 0;
-        int promoAvailableQuantity = payableQuantity;
+        int promoAvailableQuantity = calculatePromoAvailableQuantity(payableQuantity, availableStock, freeQuantity);
+        int nonPromoQuantity = quantity - promoAvailableQuantity;
 
-        if (hasInsufficientPromoStock) {
-            promoAvailableQuantity = Math.min(payableQuantity, availableStock - freeQuantity);
-            nonPromoQuantity = quantity - promoAvailableQuantity;
-        }
-
-        boolean needsAdditionalPurchase = false;
-        int additionalQuantityNeeded = 0;
-        int remainingQuantity = quantity % (promotion.getBuyQuantity() + promotion.getFreeQuantity());
-
-        if (remainingQuantity > 0 && remainingQuantity < promotion.getBuyQuantity()) {
-            needsAdditionalPurchase = true;
-            additionalQuantityNeeded = promotion.getBuyQuantity() - remainingQuantity;
-        }
+        int additionalQuantityNeeded = calculateAdditionalQuantityNeeded(quantity, promotion);
+        boolean needsAdditionalPurchase = additionalQuantityNeeded > 0;
 
         int discountAmount = freeQuantity * product.getPrice();
         int finalAmount = promoAvailableQuantity * product.getPrice();
 
-        // 원래 수량을 포함한 PromotionResult 생성
-        return PromotionResult.withPromotion(needsAdditionalPurchase, hasInsufficientPromoStock,
-                additionalQuantityNeeded, nonPromoQuantity, promoAvailableQuantity,
-                freeQuantity, discountAmount, finalAmount, quantity);
+        return PromotionResult.withPromotion(
+                needsAdditionalPurchase,
+                hasInsufficientPromoStock,
+                additionalQuantityNeeded,
+                nonPromoQuantity,
+                promoAvailableQuantity,
+                freeQuantity,
+                discountAmount,
+                finalAmount,
+                quantity
+        );
+    }
+
+    private boolean isPromotionApplicable(Product product) {
+        return product.getPromotionType() != null && !product.getPromotionType().equalsIgnoreCase("null");
+    }
+
+    private boolean isActivePromotion(Promotion promotion) {
+        return promotion != null && promotion.isActive();
+    }
+
+    private int calculatePromoAvailableQuantity(int payableQuantity, int availableStock, int freeQuantity) {
+        return Math.min(payableQuantity, availableStock - freeQuantity);
+    }
+
+    private int calculateAdditionalQuantityNeeded(int quantity, Promotion promotion) {
+        int remainingQuantity = quantity % (promotion.getBuyQuantity() + promotion.getFreeQuantity());
+        if (remainingQuantity > 0 && remainingQuantity < promotion.getBuyQuantity()) {
+            return promotion.getBuyQuantity() - remainingQuantity;
+        }
+        return 0;
     }
 }

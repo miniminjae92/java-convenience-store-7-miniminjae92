@@ -2,6 +2,7 @@ package store.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import store.common.ErrorMessage;
 import store.domain.Product;
 import store.dto.ProductDTO;
 import store.repository.ProductRepository;
@@ -49,22 +50,21 @@ public class ProductService {
 
         if (promoProduct != null && promoProduct.getStock() > 0) {
             int promoStock = promoProduct.getStock();
-            if (promoStock >= quantity) {
-                promoProduct.reduceStock(quantity);
-                promotionInventory.updateProduct(promoProduct);
-                return;
-            } else {
-                promoProduct.reduceStock(promoStock);
-                promotionInventory.updateProduct(promoProduct);
-                quantity -= promoStock;
-            }
+            int quantityToReduce = Math.min(promoStock, quantity);
+
+            promoProduct.reduceStock(quantityToReduce);
+            promotionInventory.updateProduct(promoProduct);
+            quantity -= quantityToReduce;
         }
 
-        if (regularProduct != null && regularProduct.getStock() >= quantity) {
+        if (quantity > 0 && regularProduct != null && regularProduct.getStock() >= quantity) {
             regularProduct.reduceStock(quantity);
             regularInventory.updateProduct(regularProduct);
-        } else {
-            throw new IllegalArgumentException("[ERROR] 재고가 부족합니다.");
+            return;
+        }
+
+        if (quantity > 0) {
+            throw new IllegalArgumentException(ErrorMessage.EXCEEDS_STOCK_QUANTITY.getMessage());
         }
     }
 }

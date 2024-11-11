@@ -7,13 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 public class ProductRepository {
-    private final List<Product> productsList = new ArrayList<>(); // 원본 리스트
-
+    private final List<Product> productsList = new ArrayList<>();
     private final RegularInventory regularInventory = new RegularInventory();
     private final PromotionInventory promotionInventory = new PromotionInventory();
 
     public void saveAll(List<Product> products) {
-        products.forEach(this::saveProductToList); // 원본 리스트에 저장
+        products.forEach(this::saveProductToList);
     }
 
     public int getTotalStock(String productName) {

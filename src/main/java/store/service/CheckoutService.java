@@ -44,42 +44,25 @@ public class CheckoutService {
             PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
             if (promoResult.isPromotionApplied()) {
-                int promoAvailableQuantity = promoResult.getPromoAvailableQuantity();
-                int promoAmount = product.getPrice() * promoAvailableQuantity;
+                handlePromotionAppliedProduct(promoResult, product, applyMembership, purchaseDetails, freeItems);
+                int promoAmount = product.getPrice() * promoResult.getPromoAvailableQuantity();
 
                 totalAmount += promoAmount;
                 promotionDiscount += promoResult.getDiscountAmount();
                 finalAmount += promoResult.getFinalAmount();
+                continue;
+            }
 
-                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), promoAvailableQuantity, promoAmount));
+            handleRegularProduct(product, adjustedQuantity, applyMembership, purchaseDetails);
+            int amount = product.getPrice() * adjustedQuantity;
 
-                if (promoResult.getFreeQuantity() > 0) {
-                    freeItems.add(String.format("%s\t%d개", product.getName(), promoResult.getFreeQuantity()));
-                }
+            totalAmount += amount;
+            finalAmount += amount;
 
-                if (applyMembership && promoResult.getNonPromoQuantity() > 0) {
-                    int nonPromoQuantity = promoResult.getNonPromoQuantity();
-                    int nonPromoAmount = product.getPrice() * nonPromoQuantity;
-                    int discount = membershipService.applyMembershipDiscount(nonPromoAmount);
-                    membershipDiscount += discount;
-                    finalAmount -= discount;
-
-                    purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
-                    totalAmount += nonPromoAmount;
-                }
-
-            } else {
-                int amount = product.getPrice() * adjustedQuantity;
-                totalAmount += amount;
-                finalAmount += amount;
-
-                if (applyMembership) {
-                    int discount = membershipService.applyMembershipDiscount(amount);
-                    membershipDiscount += discount;
-                    finalAmount -= discount;
-                }
-
-                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), adjustedQuantity, amount));
+            if (applyMembership) {
+                int discount = membershipService.applyMembershipDiscount(amount);
+                membershipDiscount += discount;
+                finalAmount -= discount;
             }
         }
 
@@ -93,5 +76,34 @@ public class CheckoutService {
                 membershipDiscount,
                 finalAmount
         );
+    }
+
+    private void handlePromotionAppliedProduct(PromotionResult promoResult, Product product, boolean applyMembership, List<String> purchaseDetails, List<String> freeItems) {
+        int promoAvailableQuantity = promoResult.getPromoAvailableQuantity();
+        int promoAmount = product.getPrice() * promoAvailableQuantity;
+
+        purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), promoAvailableQuantity, promoAmount));
+
+        if (promoResult.getFreeQuantity() > 0) {
+            freeItems.add(String.format("%s\t%d개", product.getName(), promoResult.getFreeQuantity()));
+        }
+
+        if (applyMembership && promoResult.getNonPromoQuantity() > 0) {
+            int nonPromoQuantity = promoResult.getNonPromoQuantity();
+            int nonPromoAmount = product.getPrice() * nonPromoQuantity;
+            int discount = membershipService.applyMembershipDiscount(nonPromoAmount);
+
+            purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
+        }
+    }
+
+    private void handleRegularProduct(Product product, int adjustedQuantity, boolean applyMembership, List<String> purchaseDetails) {
+        int amount = product.getPrice() * adjustedQuantity;
+
+        purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), adjustedQuantity, amount));
+
+        if (applyMembership) {
+            membershipService.applyMembershipDiscount(amount);
+        }
     }
 }

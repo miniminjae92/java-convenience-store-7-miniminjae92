@@ -1,4 +1,3 @@
-// RegularInventory.java
 package store.repository;
 
 import store.domain.Product;
@@ -22,11 +21,5 @@ public class RegularInventory {
 
     public Map<String, Product> getAllProducts() {
         return new LinkedHashMap<>(regularProducts);
-    }
-
-    // 특정 제품의 총 재고 반환
-    public int getTotalStock(String name) {
-        Product product = regularProducts.get(name);
-        return product != null ? product.getStock() : 0;
     }
 }
