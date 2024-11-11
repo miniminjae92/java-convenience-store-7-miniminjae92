@@ -1,11 +1,12 @@
 package store.domain;
 
 import camp.nextstep.edu.missionutils.DateTimes;
-import java.time.LocalDate;
+import store.common.ErrorMessage;
+
 import java.time.LocalDateTime;
 
 public class Promotion {
-    private final String promotionType; // 예: "1+1", "2+1"
+    private final String promotionType;
     private final int buyQuantity;
     private final int freeQuantity;
     private final LocalDateTime startDate;
@@ -13,7 +14,9 @@ public class Promotion {
 
     public Promotion(String promotionType, int buyQuantity, int freeQuantity,
                      LocalDateTime startDate, LocalDateTime endDate) {
+        validatePromotionType(promotionType);
         validateQuantities(buyQuantity, freeQuantity);
+        validateDates(startDate, endDate);
         this.promotionType = promotionType;
         this.buyQuantity = buyQuantity;
         this.freeQuantity = freeQuantity;
@@ -43,32 +46,28 @@ public class Promotion {
         return new int[]{payableQuantity, freeQuantityTotal};
     }
 
-    // 기존의 메서드들 유지 또는 필요에 따라 수정
     public String getPromotionType() { return promotionType; }
     public int getBuyQuantity() { return buyQuantity; }
     public int getFreeQuantity() { return freeQuantity; }
-    public LocalDateTime getStartDate() { return startDate; }
-    public LocalDateTime getEndDate() { return endDate; }
 
-    // 검증 메서드
     private void validatePromotionType(String promotionType) {
         if (promotionType == null || promotionType.isBlank()) {
-            throw new IllegalArgumentException("[ERROR] 프로모션 타입은 필수 입력 사항입니다.");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_INPUT_FORMAT.getMessage());
         }
     }
 
     private void validateQuantities(int buyQuantity, int freeQuantity) {
         if (buyQuantity <= 0 || freeQuantity <= 0) {
-            throw new IllegalArgumentException("[ERROR] 구매 수량과 증정 수량은 0보다 커야 합니다.");
+            throw new IllegalArgumentException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 
-    private void validateDates(LocalDate startDate, LocalDate endDate) {
+    private void validateDates(LocalDateTime startDate, LocalDateTime endDate) {
         if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("[ERROR] 프로모션 기간은 필수 입력 사항입니다.");
+            throw new IllegalArgumentException(ErrorMessage.INVALID_INPUT_FORMAT.getMessage());
         }
         if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("[ERROR] 프로모션 종료일은 시작일 이후여야 합니다.");
+            throw new IllegalArgumentException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 }

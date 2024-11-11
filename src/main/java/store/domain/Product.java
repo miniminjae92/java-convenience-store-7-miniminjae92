@@ -1,5 +1,6 @@
 package store.domain;
 
+import store.common.ErrorMessage;
 import store.dto.ProductDTO;
 
 public class Product {
@@ -9,29 +10,40 @@ public class Product {
     private final String promotionType;
 
     public Product(String name, int price, int stock, String promotionType) {
+        validateName(name);
+        validatePrice(price);
+        validateStock(stock);
         this.name = name;
         this.price = price;
         this.stock = stock;
         this.promotionType = promotionType;
     }
 
-    // 프로모션이 없는 상품을 위한 생성자
     public Product(String name, int price, int stock) {
         this(name, price, stock, null);
     }
 
-    // Getter 메서드
-    public String getName() { return name; }
-    public int getPrice() { return price; }
-    public int getStock() { return stock; }
-    public String getPromotionType() { return promotionType; }
+    public String getName() {
+        return name;
+    }
 
-    // 재고 차감 메서드
+    public int getPrice() {
+        return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public String getPromotionType() {
+        return promotionType;
+    }
+
     public void reduceStock(int quantity) {
         if (quantity > stock) {
-            throw new IllegalArgumentException("[ERROR] 일반 재고가 부족합니다.");
+            throw new IllegalStateException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
-        stock -= quantity;
+        this.stock -= quantity;
     }
 
     public ProductDTO toDTO() {
@@ -39,26 +51,25 @@ public class Product {
                 this.name,
                 this.price,
                 this.stock,
-                this.promotionType != null ? this.getPromotionType() : null
+                this.promotionType
         );
     }
 
-    // 검증 메서드
     private void validateName(String name) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("[ERROR] 상품명은 필수 입력 사항입니다.");
+            throw new IllegalArgumentException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 
     private void validatePrice(int price) {
         if (price <= 0) {
-            throw new IllegalArgumentException("[ERROR] 가격은 0보다 커야 합니다.");
+            throw new IllegalArgumentException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 
     private void validateStock(int stock) {
         if (stock < 0) {
-            throw new IllegalArgumentException("[ERROR] 재고는 음수일 수 없습니다.");
+            throw new IllegalStateException(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 }

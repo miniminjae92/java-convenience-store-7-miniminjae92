@@ -1,4 +1,3 @@
-// PromotionInventory.java
 package store.repository;
 
 import store.domain.Product;

@@ -54,6 +54,7 @@ public class ProductRepository {
     // 전체 제품 조회 (파일 입력 순서 유지)
     public List<Product> findAllInOrder() {
         return consolidateRegularProducts();
+//        return new ArrayList<>(productsList); // 순서대로 반환
     }
 
     // 레귤러와 프로모션 인벤토리 접근 메서드

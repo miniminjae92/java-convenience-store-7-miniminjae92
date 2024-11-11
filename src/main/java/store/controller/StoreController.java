@@ -1,5 +1,6 @@
 package store.controller;
 
+import store.common.ErrorMessage;
 import store.common.OrderParser;
 import store.domain.Product;
 import store.domain.PromotionResult;
@@ -65,11 +66,11 @@ public class StoreController {
 
                     Product product = productService.findProductByName(productName);
                     if (product == null) {
-                        throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
+                        throw new IllegalArgumentException(ErrorMessage.NON_EXISTENT_PRODUCT.getMessage());
                     }
                     int availableStock = product.getStock();
                     if (quantity > availableStock) {
-                        throw new IllegalArgumentException("[ERROR] 재고가 부족합니다: " + productName);
+                        throw new IllegalArgumentException(ErrorMessage.EXCEEDS_STOCK_QUANTITY.getMessage());
                     }
                     cartService.addItemToCart(productName, quantity);
                 }

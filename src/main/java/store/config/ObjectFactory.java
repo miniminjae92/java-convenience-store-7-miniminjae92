@@ -25,7 +25,7 @@ public class ObjectFactory {
         CartService cartService = new CartService(productService);
         PromotionService promotionService = new PromotionService(promotionRepository);
         MembershipService membershipService = new MembershipService(new Membership());
-        CheckoutService checkoutService = new CheckoutService(promotionService, membershipService);
+        CheckoutService checkoutService = new CheckoutService(productService, promotionService, membershipService);
 
         InputView inputView = new InputView();
         OutputView outputView = new OutputView();

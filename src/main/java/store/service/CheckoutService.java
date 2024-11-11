@@ -8,16 +8,17 @@ import store.domain.PromotionResult;
 import store.domain.Receipt;
 
 public class CheckoutService {
+    private final ProductService productService;
     private final PromotionService promotionService;
     private final MembershipService membershipService;
 
-    public CheckoutService(PromotionService promotionService, MembershipService membershipService) {
+    public CheckoutService(ProductService productService, PromotionService promotionService, MembershipService membershipService) {
+        this.productService = productService;
         this.promotionService = promotionService;
         this.membershipService = membershipService;
     }
 
-    public Receipt checkout(Map<Product, Integer> cartItems, Map<Product, Integer> originalQuantities,
-                            boolean applyMembership) {
+    public Receipt checkout(Map<Product, Integer> cartItems, Map<Product, Integer> originalQuantities, boolean applyMembership) {
         int totalAmount = 0;
         int promotionDiscount = 0;
         int membershipDiscount = 0;
@@ -48,8 +49,7 @@ public class CheckoutService {
                 promotionDiscount += promoResult.getDiscountAmount();
                 finalAmount += promoResult.getFinalAmount();
 
-                purchaseDetails.add(
-                        String.format("%s\t%d\t%d", product.getName(), totalOriginalQuantity, totalOriginalAmount));
+                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), totalOriginalQuantity, totalOriginalAmount));
 
                 if (promoResult.getFreeQuantity() > 0) {
                     freeItems.add(String.format("%s\t%d", product.getName(), promoResult.getFreeQuantity()));
@@ -62,8 +62,7 @@ public class CheckoutService {
                     membershipDiscount += discount;
                     finalAmount -= discount;
 
-                    purchaseDetails.add(
-                            String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
+                    purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
                     totalAmount += nonPromoAmount;
                 }
 
@@ -81,8 +80,6 @@ public class CheckoutService {
                 purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), adjustedQuantity, amount));
             }
         }
-
-        return new Receipt(purchaseDetails, freeItems, totalOriginalQuantity, totalOriginalAmount, totalAmount,
-                promotionDiscount, membershipDiscount, finalAmount);
+        return new Receipt(purchaseDetails, freeItems, totalOriginalQuantity, totalOriginalAmount, promotionDiscount, membershipDiscount, finalAmount);
     }
 }

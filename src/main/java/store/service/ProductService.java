@@ -1,4 +1,3 @@
-// ProductService.java
 package store.service;
 
 import java.util.List;
@@ -35,25 +34,45 @@ public class ProductService {
         return product;
     }
 
+//    public int getTotalStock(String productName) {
+//        int regularStock = regularInventory.getTotalStock(productName);
+//        int promoStock = promotionInventory.getTotalStock(productName);
+//        return regularStock + promoStock;
+//    }
+
+//    public boolean isStockAvailable(String productName, int quantity) {
+//        return getTotalStock(productName) >= quantity;
+//    }
+
     public boolean isProductInPromotionInventory(String productName) {
         return promotionInventory.findByName(productName) != null;
     }
 
     public void decreaseProductStock(String productName, int quantity) {
-        Product product = findProductByName(productName);
-        if (product == null) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
+        Product promoProduct = promotionInventory.findByName(productName);
+        Product regularProduct = regularInventory.findByName(productName);
+
+        // 프로모션 인벤토리 우선 차감
+        if (promoProduct != null && promoProduct.getStock() > 0) {
+            int promoStock = promoProduct.getStock();
+            if (promoStock >= quantity) {
+                promoProduct.reduceStock(quantity);
+                promotionInventory.updateProduct(promoProduct);
+                return;
+            } else {
+                // 프로모션 재고 전량 차감 후 남은 수량을 일반 재고에서 차감
+                promoProduct.reduceStock(promoStock);
+                promotionInventory.updateProduct(promoProduct);
+                quantity -= promoStock;
+            }
         }
 
-        product.reduceStock(quantity);
-
-        // 필요한 경우 인벤토리에서 상품 정보를 업데이트합니다.
-        if (isProductInPromotionInventory(productName)) {
-            promotionInventory.updateProduct(product);
+        // 남은 수량을 일반 인벤토리에서 차감
+        if (regularProduct != null && regularProduct.getStock() >= quantity) {
+            regularProduct.reduceStock(quantity);
+            regularInventory.updateProduct(regularProduct);
         } else {
-            regularInventory.updateProduct(product);
+            throw new IllegalArgumentException("[ERROR] 재고가 부족합니다.");
         }
     }
-
-    // 추가적인 메서드들...
 }
