@@ -33,10 +33,6 @@ public class InputView {
         return getUserConfirmation();
     }
 
-    public void displayError(String message) {
-        System.out.println("[ERROR] " + message);
-    }
-
     private boolean getUserConfirmation() {
         while (true) {
             String response = Console.readLine();

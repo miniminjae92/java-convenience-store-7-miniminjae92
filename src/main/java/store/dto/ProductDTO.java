@@ -1,6 +1,10 @@
 package store.dto;
 
 public class ProductDTO {
+    private static final String NO_STOCK = "재고 없음";
+    private static final String UNIT = "개";
+    private static final String EMPTY_PROMOTION = "";
+
     private final String name;
     private final int price;
     private final int stock;
@@ -13,25 +17,29 @@ public class ProductDTO {
         this.promotionType = promotionType;
     }
 
-    // Getter 메서드들
-    public String getName() { return name; }
-    public int getPrice() { return price; }
-    public int getStock() { return stock; }
-    public String getPromotionType() { return promotionType; }
-
-    // 재고 정보 출력용 메서드
-    public String getStockInfo() {
-        if (stock > 0) {
-            return stock + "개";
-        }
-        return "재고 없음";
+    public String getName() {
+        return name;
     }
 
-    // 프로모션 정보 출력용 메서드
+    public int getPrice() {
+        return price;
+    }
+
+    public String getStockInfo() {
+        if (hasStock()) {
+            return stock + UNIT;
+        }
+        return NO_STOCK;
+    }
+
+    private boolean hasStock() {
+        return stock > 0;
+    }
+
     public String getPromotionInfo() {
         if (promotionType != null && !promotionType.isBlank()) {
             return promotionType;
         }
-        return "";
+        return EMPTY_PROMOTION;
     }
 }

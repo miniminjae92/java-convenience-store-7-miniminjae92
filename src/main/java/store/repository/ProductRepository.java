@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ProductRepository {
-    private final Map<String, List<Product>> productsMap = new LinkedHashMap<>();
     private final List<Product> productsList = new ArrayList<>(); // 원본 리스트
 
     private final RegularInventory regularInventory = new RegularInventory();

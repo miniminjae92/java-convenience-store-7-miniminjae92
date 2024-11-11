@@ -2,7 +2,6 @@ package store.domain;
 
 import camp.nextstep.edu.missionutils.DateTimes;
 import store.common.ErrorMessage;
-
 import java.time.LocalDateTime;
 
 public class Promotion {
@@ -37,6 +36,19 @@ public class Promotion {
         return calculatePromotion(quantity)[1];
     }
 
+
+    public String getPromotionType() {
+        return promotionType;
+    }
+
+    public int getBuyQuantity() {
+        return buyQuantity;
+    }
+
+    public int getFreeQuantity() {
+        return freeQuantity;
+    }
+
     private int[] calculatePromotion(int quantity) {
         int totalUnit = buyQuantity + freeQuantity;
         int promoSets = quantity / totalUnit;
@@ -45,10 +57,6 @@ public class Promotion {
         int freeQuantityTotal = promoSets * freeQuantity;
         return new int[]{payableQuantity, freeQuantityTotal};
     }
-
-    public String getPromotionType() { return promotionType; }
-    public int getBuyQuantity() { return buyQuantity; }
-    public int getFreeQuantity() { return freeQuantity; }
 
     private void validatePromotionType(String promotionType) {
         if (promotionType == null || promotionType.isBlank()) {
