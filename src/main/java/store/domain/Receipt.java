@@ -10,17 +10,21 @@ public class Receipt {
     private final int promotionDiscount;
     private final int membershipDiscount;
     private final int finalAmount;
+    private final int totalQuantity; // 추가: 총 구매 수량
 
+    // 수정된 생성자, 추가 필드 포함
     public Receipt(List<String> purchaseDetails, List<String> freeItems, int totalAmount, int promotionDiscount,
-                   int membershipDiscount, int finalAmount) {
+                   int membershipDiscount, int finalAmount, int totalQuantity) {
         this.purchaseDetails = purchaseDetails;
         this.freeItems = freeItems;
         this.totalAmount = totalAmount;
         this.promotionDiscount = promotionDiscount;
         this.membershipDiscount = membershipDiscount;
         this.finalAmount = finalAmount;
+        this.totalQuantity = totalQuantity; // 총 구매 수량 필드 초기화
     }
 
+    // Getters
     public int getTotalAmount() {
         return totalAmount;
     }
@@ -36,6 +40,10 @@ public class Receipt {
     public int getFinalAmount() {
         return finalAmount;
     }
+
+    public int getTotalQuantity() {
+        return totalQuantity;
+    } // 총 구매 수량 Getter 추가
 
     public List<String> getPurchaseDetails() {
         return purchaseDetails;
@@ -59,11 +67,12 @@ public class Receipt {
                     Integer.parseInt(splitDetail[2])));
         }
 
-        // Free items section (remove duplicates if necessary)
+        // Free items section
         receipt.append(ReceiptMessage.FREE_ITEMS_HEADER.format()).append("\n");
-        freeItems.stream().distinct().forEach(item ->
-                receipt.append(String.format("%-10s\t%2s%n", item, "1"))
-        );
+        freeItems.stream().distinct().forEach(item -> {
+            String[] itemDetail = item.split("\t");
+            receipt.append(String.format("%-10s\t%2s%n", itemDetail[0], itemDetail[1]));
+        });
 
         // Calculate total quantity
         int totalQuantity = purchaseDetails.stream()

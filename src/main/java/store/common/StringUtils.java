@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public class StringUtils {
     public static String[] parseData(String line, int expectedSize) {
-        String[] data = Arrays.stream(line.split(Constants.COMMA_DELIMITER))
+        String[] data = Arrays.stream(line.split(Constants.COMMA_DELIMITER, -1))
                 .map(String::trim)
                 .toArray(String[]::new);
 

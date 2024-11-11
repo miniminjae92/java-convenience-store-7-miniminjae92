@@ -1,70 +1,90 @@
 package store.service;
 
-import store.domain.PromotionResult;
-import store.domain.Receipt;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import store.domain.Product;
+import store.domain.PromotionResult;
+import store.domain.Receipt;
 
 public class CheckoutService {
+    private final ProductService productService;
     private final PromotionService promotionService;
     private final MembershipService membershipService;
-    private final ProductService productService;
 
-    public CheckoutService(PromotionService promotionService, MembershipService membershipService, ProductService productService) {
+    public CheckoutService(ProductService productService, PromotionService promotionService,
+                           MembershipService membershipService) {
+        this.productService = productService;
         this.promotionService = promotionService;
         this.membershipService = membershipService;
-        this.productService = productService;
     }
 
-    public Receipt checkout(Map<String, Integer> cartItems, boolean applyMembership) {
-        int totalAmount = calculateTotalAmount(cartItems);
-        int nonPromotionTotal = calculateNonPromotionTotal(cartItems);
+    public Receipt checkout(Map<Product, Integer> cartItems, boolean applyMembership) {
+        int totalAmount = 0;
+        int promotionDiscount = 0;
+        int membershipDiscount = 0;
+        int finalAmount = 0;
 
-        int promotionDiscount = applyPromotions(cartItems);
-        int discountedAmount = totalAmount - promotionDiscount;
-        int membershipDiscount = applyMembership ? membershipService.applyMembershipDiscount(nonPromotionTotal) : 0;
-        int finalAmount = discountedAmount - membershipDiscount;
+        int totalQuantity = 0; // 실제 구매 의도한 총 수량
+        List<String> purchaseDetails = new ArrayList<>();
+        List<String> freeItems = new ArrayList<>();
 
-        List<String> purchaseDetails = generatePurchaseDetails(cartItems);
-        List<String> freeItems = promotionService.getFreeItems();
+        for (Map.Entry<Product, Integer> entry : cartItems.entrySet()) {
+            Product product = entry.getKey();
+            int originalQuantity = entry.getValue();  // 사용자가 요청한 원래 수량
+            int originalAmount = product.getPrice() * originalQuantity;
 
-        reduceStockForCartItems(cartItems);
+            totalQuantity += originalQuantity; // 요청된 원래 총 수량을 합산
 
-        return new Receipt(purchaseDetails, freeItems, totalAmount, promotionDiscount, membershipDiscount, finalAmount);
-    }
+            PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
-    private int calculateTotalAmount(Map<String, Integer> cartItems) {
-        return cartItems.entrySet().stream()
-                .mapToInt(entry -> productService.getProductPrice(entry.getKey()) * entry.getValue())
-                .sum();
-    }
+            if (promoResult.isPromotionApplied()) {
+                int promoAvailableQuantity = promoResult.getPromoAvailableQuantity();
+                int promoAmount = product.getPrice() * promoAvailableQuantity;
 
-    private int calculateNonPromotionTotal(Map<String, Integer> cartItems) {
-        return cartItems.entrySet().stream()
-                .filter(entry -> !promotionService.applyPromotion(entry.getKey(), entry.getValue()).isPromotionApplied())
-                .mapToInt(entry -> productService.getProductPrice(entry.getKey()) * entry.getValue())
-                .sum();
-    }
+                totalAmount += promoAmount;
+                promotionDiscount += promoResult.getDiscountAmount();
+                finalAmount += promoResult.getFinalAmount();
 
-    private int applyPromotions(Map<String, Integer> cartItems) {
-        return cartItems.entrySet().stream()
-                .mapToInt(entry -> promotionService.applyPromotion(entry.getKey(), entry.getValue()).getDiscountAmount())
-                .sum();
-    }
+                purchaseDetails.add(
+                        String.format("%s\t%d\t%d", product.getName(), promoAvailableQuantity, promoAmount));
 
-    private List<String> generatePurchaseDetails(Map<String, Integer> cartItems) {
-        return cartItems.entrySet().stream()
-                .map(entry -> String.format("%s\t%d\t%d",
-                        entry.getKey(), entry.getValue(), productService.getProductPrice(entry.getKey()) * entry.getValue()))
-                .collect(Collectors.toList());
-    }
+                if (promoResult.getFreeQuantity() > 0) {
+                    freeItems.add(String.format("%s\t%d개", product.getName(), promoResult.getFreeQuantity()));
+                }
 
-    private void reduceStockForCartItems(Map<String, Integer> cartItems) {
-        cartItems.forEach((productName, quantity) -> {
-            if (productName != null) {
-                productService.validateAndReduceStock(productName, quantity);
+                if (applyMembership && promoResult.getNonPromoQuantity() > 0) {
+                    int nonPromoQuantity = promoResult.getNonPromoQuantity();
+                    int nonPromoAmount = product.getPrice() * nonPromoQuantity;
+                    int discount = membershipService.applyMembershipDiscount(nonPromoAmount);
+                    membershipDiscount += discount;
+                    finalAmount -= discount;
+
+                    purchaseDetails.add(
+                            String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
+                    totalAmount += nonPromoAmount;
+                }
+
+                productService.decreaseProductStock(product.getName(), originalQuantity);
+
+            } else {
+                int amount = product.getPrice() * originalQuantity;
+                totalAmount += amount;
+                finalAmount += amount;
+
+                if (applyMembership) {
+                    int discount = membershipService.applyMembershipDiscount(amount);
+                    membershipDiscount += discount;
+                    finalAmount -= discount;
+                }
+
+                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), originalQuantity, amount));
+                productService.decreaseProductStock(product.getName(), originalQuantity);
             }
-        });
+        }
+
+        // 총 구매 수량은 원래 구매 수량(totalQuantity)을 사용
+        return new Receipt(purchaseDetails, freeItems, totalAmount, promotionDiscount, membershipDiscount, finalAmount,
+                totalQuantity);
     }
 }

@@ -1,48 +1,44 @@
 package store.service;
 
-import java.util.Map.Entry;
-import store.domain.Cart;
 import store.domain.Product;
-import store.repository.ProductRepository;
 import java.util.LinkedHashMap;
-
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CartService {
-    private final Cart cart;
-    private final ProductRepository productRepository;
+    private Map<Product, Integer> cartItems = new LinkedHashMap<>();
+    private Map<Product, Integer> originalQuantities = new LinkedHashMap<>(); // 원래 수량을 저장하는 필드 추가
 
-    public CartService(Cart cart, ProductRepository productRepository) {
-        this.cart = cart;
-        this.productRepository = productRepository;
+    private final ProductService productService;
+
+    public CartService(ProductService productService) {
+        this.productService = productService;
     }
 
     public void addItemToCart(String productName, int quantity) {
-        Product product = productRepository.findByName(productName);
-        cart.addItem(product, quantity);
-    }
+        Product product = productService.findProductByName(productName);
+        if (product == null) {
+            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
+        }
 
-    public void updateItemQuantity(String productName, int quantity) {
-        Product product = productRepository.findByName(productName);
-        cart.updateItemQuantity(product, quantity);
+        // 장바구니와 원래 수량을 모두 업데이트
+        cartItems.put(product, cartItems.getOrDefault(product, 0) + quantity);
+        originalQuantities.put(product, originalQuantities.getOrDefault(product, 0) + quantity); // 원래 수량도 저장
     }
 
     public Map<Product, Integer> getItems() {
-        return cart.getItems();
+        return new LinkedHashMap<>(cartItems);
     }
 
-    public Map<String, Integer> getCartItems() {
-        return cart.getItems().entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> entry.getKey().getName(), // 이름만 키로 사용
-                        Entry::getValue,
-                        Integer::sum, // 중복 키 발생 시 수량을 합산
-                        LinkedHashMap::new // 순서를 유지하는 LinkedHashMap 사용
-                ));
+    public Map<Product, Integer> getOriginalQuantities() {
+        return new LinkedHashMap<>(originalQuantities); // 원래 수량을 반환하는 메서드 추가
+    }
+
+    public void setItems(Map<Product, Integer> items) {
+        this.cartItems = items;
     }
 
     public void clearCart() {
-        cart.clear();
+        cartItems.clear();
+        originalQuantities.clear(); // 원래 수량도 초기화
     }
 }

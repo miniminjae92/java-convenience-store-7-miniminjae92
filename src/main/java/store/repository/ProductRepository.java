@@ -1,98 +1,67 @@
-
 package store.repository;
 
+import store.domain.Product;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import store.domain.Product;
-import store.domain.PromotionProduct;
-import store.dto.ProductDTO;
 
 public class ProductRepository {
-    private static final String REGULAR = "regular";
-    private static final String PROMOTION = "promotion";
-    private final Map<String, Map<String, Product>> products = new LinkedHashMap<>();
+    private final Map<String, List<Product>> productsMap = new LinkedHashMap<>();
+    private final List<Product> productsList = new ArrayList<>(); // 원본 리스트
 
-    public void save(Product product) {
-        Map<String, Product> productTypes = getOrCreateProductTypes(product.getName());
-        productTypes.put(REGULAR, product);
+    private final RegularInventory regularInventory = new RegularInventory();
+    private final PromotionInventory promotionInventory = new PromotionInventory();
+
+    // 원본 리스트에 제품 저장 (데이터 로더에서 호출)
+    public void saveAll(List<Product> products) {
+        products.forEach(this::saveProductToList); // 원본 리스트에 저장
     }
 
-    public void savePromotion(PromotionProduct promotionProduct) {
-        Map<String, Product> productTypes = getOrCreateProductTypes(promotionProduct.getName());
-        productTypes.put(PROMOTION, promotionProduct);
+    private void saveProductToList(Product product) {
+        productsList.add(product); // 입력 순서대로 원본 리스트에 추가
     }
 
-    public List<ProductDTO> findAllAsDTO() {
-        List<ProductDTO> allProducts = new ArrayList<>();
-        products.values().forEach(productTypes -> productTypes.values().forEach(product -> allProducts.add(product.toDTO())));
-        return allProducts;
-    }
+    // 중복된 일반 제품 수량을 합산하여 반환
+    public List<Product> consolidateRegularProducts() {
+        Map<String, Product> consolidatedProducts = new LinkedHashMap<>();
 
-    public Product findByName(String name) {
-        Map<String, Product> productTypes = products.get(name);
-
-        if (productTypes == null) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + name);
+        for (Product product : productsList) {
+            if (product.getPromotionType() == null) {
+                // 일반 제품인 경우 이름을 키로 하여 수량을 합산
+                consolidatedProducts.merge(product.getName(), product, (existing, newProduct) ->
+                        new Product(existing.getName(), existing.getPrice(), existing.getStock() + newProduct.getStock(), null));
+            } else {
+                // 프로모션 제품은 그대로 추가
+                consolidatedProducts.putIfAbsent(product.getName() + "-" + product.getPromotionType(), product);
+            }
         }
 
-        Product promotionProduct = productTypes.get(PROMOTION);
-        if (promotionProduct != null) {
-            return promotionProduct;
-        }
-
-        Product regularProduct = productTypes.get(REGULAR);
-        if (regularProduct != null) {
-            return regularProduct;
-        }
-
-        throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + name);
+        return new ArrayList<>(consolidatedProducts.values());
     }
 
-    public PromotionProduct findPromotionByName(String name) {
-        Product product = products.getOrDefault(name, Collections.emptyMap()).get(PROMOTION);
-        if (!(product instanceof PromotionProduct)) {
-            throw new IllegalArgumentException("[ERROR] 존재하지 않는 프로모션 상품입니다: " + name);
-        }
-        return (PromotionProduct) product;
-    }
-
-    public void updateProduct(String name, Product updatedProduct) {
-        validateProductExists(name, REGULAR);
-        products.get(name).put(REGULAR, updatedProduct);
-    }
-
-    public void updatePromotionProduct(String name, PromotionProduct updatedPromotionProduct) {
-        validateProductExists(name, PROMOTION);
-        products.get(name).put(PROMOTION, updatedPromotionProduct);
-    }
-
-    public void delete(String name, String type) {
-        validateProductExists(name, type);
-        products.get(name).remove(type);
-        removeIfEmpty(name);
-    }
-
-    public void deleteAll() {
-        products.clear();
-    }
-
-    private Map<String, Product> getOrCreateProductTypes(String name) {
-        return products.computeIfAbsent(name, k -> new LinkedHashMap<>());
-    }
-
-    private void validateProductExists(String name, String type) {
-        Map<String, Product> productTypes = products.get(name);
-        if (productTypes == null || !productTypes.containsKey(type)) {
-            throw new IllegalArgumentException("[ERROR] 해당 이름의 상품이 존재하지 않습니다: " + name);
+    // 원본 리스트에서 레귤러와 프로모션 인벤토리로 분류
+    public void populateInventories() {
+        for (Product product : productsList) {
+            if (product.getPromotionType() == null || product.getPromotionType().equalsIgnoreCase("null")) {
+                regularInventory.addProduct(product); // 일반 제품 저장
+            } else {
+                promotionInventory.addProduct(product); // 프로모션 제품 저장
+            }
         }
     }
 
-    private void removeIfEmpty(String name) {
-        if (products.get(name).isEmpty()) {
-            products.remove(name);
-        }
+    // 전체 제품 조회 (파일 입력 순서 유지)
+    public List<Product> findAllInOrder() {
+        return consolidateRegularProducts();
+    }
+
+    // 레귤러와 프로모션 인벤토리 접근 메서드
+    public RegularInventory getRegularInventory() {
+        return regularInventory;
+    }
+
+    public PromotionInventory getPromotionInventory() {
+        return promotionInventory;
     }
 }

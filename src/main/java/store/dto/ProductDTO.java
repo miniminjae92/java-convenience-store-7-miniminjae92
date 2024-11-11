@@ -13,22 +13,13 @@ public class ProductDTO {
         this.promotionType = promotionType;
     }
 
-    public String getName() {
-        return name;
-    }
+    // Getter 메서드들
+    public String getName() { return name; }
+    public int getPrice() { return price; }
+    public int getStock() { return stock; }
+    public String getPromotionType() { return promotionType; }
 
-    public int getPrice() {
-        return price;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    public String getPromotionType() {
-        return promotionType;
-    }
-
+    // 재고 정보 출력용 메서드
     public String getStockInfo() {
         if (stock > 0) {
             return stock + "개";
@@ -36,8 +27,9 @@ public class ProductDTO {
         return "재고 없음";
     }
 
+    // 프로모션 정보 출력용 메서드
     public String getPromotionInfo() {
-        if (promotionType != null) {
+        if (promotionType != null && !promotionType.isBlank()) {
             return promotionType;
         }
         return "";

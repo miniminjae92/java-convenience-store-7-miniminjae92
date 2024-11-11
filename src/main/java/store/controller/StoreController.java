@@ -1,17 +1,18 @@
 package store.controller;
 
-import java.time.LocalDate;
 import store.common.OrderParser;
+import store.domain.Product;
 import store.domain.PromotionResult;
 import store.domain.Receipt;
+import store.service.CartService;
 import store.service.CheckoutService;
 import store.service.ProductService;
-import store.service.CartService;
 import store.service.PromotionService;
 import store.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class StoreController {
@@ -22,7 +23,9 @@ public class StoreController {
     private final InputView inputView;
     private final OutputView outputView;
 
-    public StoreController(ProductService productService, CartService cartService, CheckoutService checkoutService, PromotionService promotionService, InputView inputView, OutputView outputView) {
+    public StoreController(ProductService productService, CartService cartService,
+                           CheckoutService checkoutService, PromotionService promotionService,
+                           InputView inputView, OutputView outputView) {
         this.productService = productService;
         this.cartService = cartService;
         this.checkoutService = checkoutService;
@@ -55,7 +58,22 @@ public class StoreController {
             try {
                 String input = getValidatedInput();
                 Map<String, Integer> selectedProducts = OrderParser.parseProductInput(input);
-                addProductsToCart(selectedProducts);
+
+                // 재고 확인 후 장바구니에 추가
+                for (Map.Entry<String, Integer> entry : selectedProducts.entrySet()) {
+                    String productName = entry.getKey();
+                    int quantity = entry.getValue();
+
+                    Product product = productService.findProductByName(productName);
+                    if (product == null) {
+                        throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
+                    }
+                    int availableStock = product.getStock();
+                    if (quantity > availableStock) {
+                        throw new IllegalArgumentException("[ERROR] 재고가 부족합니다: " + productName);
+                    }
+                    cartService.addItemToCart(productName, quantity);
+                }
                 isValidInput = true;
             } catch (IllegalArgumentException e) {
                 outputView.displayError(e.getMessage());
@@ -64,53 +82,47 @@ public class StoreController {
     }
 
     private void handlePromotions() {
-        cartService.getItems().forEach((product, quantity) -> {
-            PromotionResult result = promotionService.applyPromotion(product.getName(), quantity);
+        Map<Product, Integer> originalQuantities = cartService.getOriginalQuantities();
+        Map<Product, Integer> updatedCartItems = new HashMap<>();
 
-            if (result.needsAdditionalPurchase()) {
-                boolean userWantsToAdd = inputView.promptUserForAdditionalPurchase(
-                        product.getName(), result.getAdditionalQuantityNeeded());
-                if (userWantsToAdd) {
-                    cartService.addItemToCart(product.getName(), result.getAdditionalQuantityNeeded());
-                }
-            }
+        for (Map.Entry<Product, Integer> entry : originalQuantities.entrySet()) {
+            Product product = entry.getKey();
+            int originalQuantity = entry.getValue();
 
-            if (result.hasInsufficientPromoStock()) {
-                boolean userWantsToPayRegularPrice = inputView.promptUserForRegularPricePurchase(
-                        product.getName(), result.getNonPromoQuantity());
-                if (!userWantsToPayRegularPrice) {
-                    cartService.updateItemQuantity(product.getName(), product.getStock());
-                }
-            }
-        });
-    }
+            PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
-    private boolean applyMembership() {
-        boolean isValidMembership = false;
-        boolean applyMembership = false;
-        while (!isValidMembership) {
-            try {
-                applyMembership = inputView.promptMembership();
-                isValidMembership = true;
-            } catch (IllegalArgumentException e) {
-                outputView.displayError("멤버십 적용에 실패했습니다. 다시 시도해 주세요.");
+            if (promoResult.isPromotionApplied()) {
+                int finalQuantity = promoResult.getPromoAvailableQuantity() + promoResult.getFreeQuantity();
+                updatedCartItems.put(product, finalQuantity);
+            } else {
+                updatedCartItems.put(product, originalQuantity);
             }
         }
-        return applyMembership;
+
+        cartService.setItems(updatedCartItems);
+    }
+
+
+
+    private boolean applyMembership() {
+        try {
+            return inputView.promptMembership();
+        } catch (IllegalArgumentException e) {
+            outputView.displayError(e.getMessage());
+            return false;
+        }
     }
 
     private void checkoutCart(boolean applyMembership) {
-        boolean isCheckoutSuccessful = false;
-        while (!isCheckoutSuccessful) {
-            try {
-                Map<String, Integer> cartItems = cartService.getCartItems();
-                Receipt receipt = checkoutService.checkout(cartItems, applyMembership);
-                outputView.displayReceipt(receipt);
-                cartService.clearCart();
-                isCheckoutSuccessful = true;
-            } catch (Exception e) {
-                outputView.displayError("결제 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
-            }
+        try {
+            Map<Product, Integer> cartItems = cartService.getItems();
+            Receipt receipt = checkoutService.checkout(cartItems, applyMembership);
+            outputView.displayReceipt(receipt);
+
+            // 장바구니 초기화
+            cartService.clearCart();
+        } catch (Exception e) {
+            outputView.displayError("결제 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
         }
     }
 
@@ -118,12 +130,6 @@ public class StoreController {
         String input = inputView.readItem();
         InputValidator.validateFormat(input);
         return input;
-    }
-
-    private void addProductsToCart(Map<String, Integer> selectedProducts) {
-        for (Map.Entry<String, Integer> entry : selectedProducts.entrySet()) {
-            cartService.addItemToCart(entry.getKey(), entry.getValue());
-        }
     }
 
     private boolean promptContinueShopping() {
