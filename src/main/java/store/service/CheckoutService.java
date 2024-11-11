@@ -39,6 +39,8 @@ public class CheckoutService {
             totalOriginalQuantity += originalQuantity;
             totalOriginalAmount += originalAmount;
 
+            productService.decreaseProductStock(product.getName(), adjustedQuantity);
+
             PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
             if (promoResult.isPromotionApplied()) {
@@ -49,12 +51,15 @@ public class CheckoutService {
                 promotionDiscount += promoResult.getDiscountAmount();
                 finalAmount += promoResult.getFinalAmount();
 
-                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), totalOriginalQuantity, totalOriginalAmount));
+                // 구매 내역에 프로모션 적용된 수량 추가
+                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), promoAvailableQuantity, promoAmount));
 
+                // 무료 증정 상품 추가
                 if (promoResult.getFreeQuantity() > 0) {
-                    freeItems.add(String.format("%s\t%d", product.getName(), promoResult.getFreeQuantity()));
+                    freeItems.add(String.format("%s\t%d개", product.getName(), promoResult.getFreeQuantity()));
                 }
 
+                // 멤버십 할인이 적용된 경우
                 if (applyMembership && promoResult.getNonPromoQuantity() > 0) {
                     int nonPromoQuantity = promoResult.getNonPromoQuantity();
                     int nonPromoAmount = product.getPrice() * nonPromoQuantity;
@@ -62,6 +67,7 @@ public class CheckoutService {
                     membershipDiscount += discount;
                     finalAmount -= discount;
 
+                    // 비할인 상품도 구매 내역에 추가
                     purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), nonPromoQuantity, nonPromoAmount));
                     totalAmount += nonPromoAmount;
                 }
@@ -80,6 +86,16 @@ public class CheckoutService {
                 purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), adjustedQuantity, amount));
             }
         }
-        return new Receipt(purchaseDetails, freeItems, totalOriginalQuantity, totalOriginalAmount, promotionDiscount, membershipDiscount, finalAmount);
+
+        return new Receipt(
+                purchaseDetails,
+                freeItems,
+                totalOriginalQuantity,
+                totalOriginalAmount,
+                totalAmount,
+                promotionDiscount,
+                membershipDiscount,
+                finalAmount
+        );
     }
 }

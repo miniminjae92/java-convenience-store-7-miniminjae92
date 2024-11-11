@@ -68,10 +68,11 @@ public class StoreController {
                     if (product == null) {
                         throw new IllegalArgumentException(ErrorMessage.NON_EXISTENT_PRODUCT.getMessage());
                     }
-                    int availableStock = product.getStock();
-                    if (quantity > availableStock) {
+
+                    if (!productService.hasSufficientTotalStock(productName, quantity)) {
                         throw new IllegalArgumentException(ErrorMessage.EXCEEDS_STOCK_QUANTITY.getMessage());
                     }
+
                     cartService.addItemToCart(productName, quantity);
                 }
                 isValidInput = true;
@@ -92,7 +93,7 @@ public class StoreController {
             PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
             if (promoResult.isPromotionApplied()) {
-                int finalQuantity = promoResult.getPromoAvailableQuantity(); // 프로모션 적용 후 수량
+                int finalQuantity = promoResult.getPromoAvailableQuantity();
                 promoCartItems.put(product, finalQuantity);
 
 
@@ -142,7 +143,7 @@ public class StoreController {
 
             cartService.clearCart();
         } catch (Exception e) {
-            outputView.displayError("결제 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
+            outputView.displayError(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
     }
 

@@ -34,15 +34,10 @@ public class ProductService {
         return product;
     }
 
-//    public int getTotalStock(String productName) {
-//        int regularStock = regularInventory.getTotalStock(productName);
-//        int promoStock = promotionInventory.getTotalStock(productName);
-//        return regularStock + promoStock;
-//    }
-
-//    public boolean isStockAvailable(String productName, int quantity) {
-//        return getTotalStock(productName) >= quantity;
-//    }
+    public boolean hasSufficientTotalStock(String productName, int requiredQuantity) {
+        int totalStock = productRepository.getTotalStock(productName);
+        return totalStock >= requiredQuantity;
+    }
 
     public boolean isProductInPromotionInventory(String productName) {
         return promotionInventory.findByName(productName) != null;
@@ -52,7 +47,6 @@ public class ProductService {
         Product promoProduct = promotionInventory.findByName(productName);
         Product regularProduct = regularInventory.findByName(productName);
 
-        // 프로모션 인벤토리 우선 차감
         if (promoProduct != null && promoProduct.getStock() > 0) {
             int promoStock = promoProduct.getStock();
             if (promoStock >= quantity) {
@@ -60,14 +54,12 @@ public class ProductService {
                 promotionInventory.updateProduct(promoProduct);
                 return;
             } else {
-                // 프로모션 재고 전량 차감 후 남은 수량을 일반 재고에서 차감
                 promoProduct.reduceStock(promoStock);
                 promotionInventory.updateProduct(promoProduct);
                 quantity -= promoStock;
             }
         }
 
-        // 남은 수량을 일반 인벤토리에서 차감
         if (regularProduct != null && regularProduct.getStock() >= quantity) {
             regularProduct.reduceStock(quantity);
             regularInventory.updateProduct(regularProduct);

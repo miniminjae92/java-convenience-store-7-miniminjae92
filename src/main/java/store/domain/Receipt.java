@@ -9,15 +9,17 @@ public class Receipt {
     private final int totalOriginalQuantity;
     private final int totalOriginalAmount;
     private final int promotionDiscount;
+    private final int totalAmount;
     private final int membershipDiscount;
     private final int finalAmount;
 
-    public Receipt(List<String> purchaseDetails, List<String> freeItems, int totalOriginalQuantity,
+    public Receipt(List<String> purchaseDetails, List<String> freeItems, int totalOriginalQuantity, int totalAmount,
                    int totalOriginalAmount, int promotionDiscount, int membershipDiscount, int finalAmount) {
         this.purchaseDetails = purchaseDetails;
         this.freeItems = freeItems;
         this.totalOriginalQuantity = totalOriginalQuantity;
         this.totalOriginalAmount = totalOriginalAmount;
+        this.totalAmount = totalAmount;
         this.promotionDiscount = promotionDiscount;
         this.membershipDiscount = membershipDiscount;
         this.finalAmount = finalAmount;
