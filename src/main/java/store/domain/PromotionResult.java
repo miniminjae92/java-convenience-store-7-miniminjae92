@@ -41,7 +41,7 @@ public class PromotionResult {
     public int getOriginalQuantity() { return originalQuantity; } // 원래 수량 게터 추가
 
     // 프로모션이 없는 경우의 정적 팩토리 메서드
-    public static PromotionResult noPromotion(int totalAmount) {
+    public static PromotionResult noPromotion(int totalAmount, int quantity) {
         return new PromotionResult(false, false, false, 0, 0, 0, 0, 0, totalAmount, 0);
     }
 
@@ -51,6 +51,6 @@ public class PromotionResult {
                                                 int freeQuantity, int discountAmount, int finalAmount, int originalQuantity) {
         return new PromotionResult(true, needsAdditionalPurchase, hasInsufficientPromoStock,
                 additionalQuantityNeeded, nonPromoQuantity, promoAvailableQuantity,
-                freeQuantity, discountAmount, finalAmount, originalQuantity); // 원래 수량 포함
+                freeQuantity, discountAmount, finalAmount, originalQuantity);
     }
 }

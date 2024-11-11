@@ -1,3 +1,4 @@
+// PromotionService.java
 package store.service;
 
 import store.domain.Product;
@@ -14,12 +15,12 @@ public class PromotionService {
 
     public PromotionResult applyPromotion(Product product, int quantity) {
         if (product.getPromotionType() == null || product.getPromotionType().equalsIgnoreCase("null")) {
-            return PromotionResult.noPromotion(product.getPrice() * quantity);
+            return PromotionResult.noPromotion(product.getPrice() * quantity, quantity);
         }
 
         Promotion promotion = promotionRepository.findByType(product.getPromotionType());
         if (promotion == null || !promotion.isActive()) {
-            return PromotionResult.noPromotion(product.getPrice() * quantity);
+            return PromotionResult.noPromotion(product.getPrice() * quantity, quantity);
         }
 
         int payableQuantity = promotion.calculatePayableQuantity(quantity);

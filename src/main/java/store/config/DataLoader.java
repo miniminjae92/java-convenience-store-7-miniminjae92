@@ -1,13 +1,11 @@
 package store.config;
 
-import java.util.HashSet;
-import java.util.Set;
+import store.common.ErrorMessage;
 import store.common.StringUtils;
 import store.domain.Product;
 import store.domain.Promotion;
 import store.repository.ProductRepository;
 import store.repository.PromotionRepository;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -25,16 +23,12 @@ public class DataLoader {
     }
 
     public void initializeData(String productFilePath, String promotionFilePath) {
-        // 제품과 프로모션을 각각 로드하여 저장
         List<Product> products = loadProducts(productFilePath);
         List<Promotion> promotions = loadPromotions(promotionFilePath);
 
-        // 원본 제품 리스트에 저장
         productRepository.saveAll(products);
-        // 프로모션 리스트 저장
         promotions.forEach(promotionRepository::save);
 
-        // 분류된 인벤토리로 저장
         productRepository.populateInventories();
     }
 
@@ -49,21 +43,18 @@ public class DataLoader {
                 String promotionType = data[3].equals("null") ? null : data[3];
 
                 if (promotionType != null) {
-                    // 프로모션 제품 추가
                     Product promoProduct = new Product(name, price, quantity, promotionType);
                     products.add(promoProduct);
 
-                    // 일반 제품도 초기화해서 추가 (수량 0으로 설정)
                     Product regularProduct = new Product(name, price, 0, null);
                     products.add(regularProduct);
                 } else {
-                    // 일반 제품만 추가
                     Product regularProduct = new Product(name, price, quantity, null);
                     products.add(regularProduct);
                 }
             });
         } catch (IOException e) {
-            throw new IllegalStateException("파일 읽기 에러", e);
+            throw new IllegalStateException(ErrorMessage.FILE_READ_ERROR.getMessage(), e);
         }
         return products;
     }
@@ -83,7 +74,7 @@ public class DataLoader {
                 promotions.add(promotion);
             });
         } catch (IOException e) {
-            throw new IllegalStateException("파일 읽기 에러", e);
+            throw new IllegalStateException(ErrorMessage.FILE_READ_ERROR.getMessage(), e);
         }
         return promotions;
     }

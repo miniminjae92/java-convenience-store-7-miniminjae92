@@ -59,7 +59,6 @@ public class StoreController {
                 String input = getValidatedInput();
                 Map<String, Integer> selectedProducts = OrderParser.parseProductInput(input);
 
-                // 재고 확인 후 장바구니에 추가
                 for (Map.Entry<String, Integer> entry : selectedProducts.entrySet()) {
                     String productName = entry.getKey();
                     int quantity = entry.getValue();
@@ -82,27 +81,47 @@ public class StoreController {
     }
 
     private void handlePromotions() {
-        Map<Product, Integer> originalQuantities = cartService.getOriginalQuantities();
-        Map<Product, Integer> updatedCartItems = new HashMap<>();
+        Map<Product, Integer> originalCartItems = cartService.getOriginalItems();
+        Map<Product, Integer> promoCartItems = new HashMap<>();
 
-        for (Map.Entry<Product, Integer> entry : originalQuantities.entrySet()) {
+        for (Map.Entry<Product, Integer> entry : originalCartItems.entrySet()) {
             Product product = entry.getKey();
             int originalQuantity = entry.getValue();
 
             PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
             if (promoResult.isPromotionApplied()) {
-                int finalQuantity = promoResult.getPromoAvailableQuantity() + promoResult.getFreeQuantity();
-                updatedCartItems.put(product, finalQuantity);
+                int finalQuantity = promoResult.getPromoAvailableQuantity(); // 프로모션 적용 후 수량
+                promoCartItems.put(product, finalQuantity);
+
+
+                if (promoResult.needsAdditionalPurchase()) {
+                    boolean userAgrees = inputView.promptUserForAdditionalPurchase(product.getName(), promoResult.getAdditionalQuantityNeeded());
+                    if (userAgrees) {
+                        int updatedQuantity = finalQuantity + promoResult.getAdditionalQuantityNeeded();
+                        promoCartItems.put(product, updatedQuantity);
+                    } else {
+                        int adjustedQuantity = (finalQuantity / (promoResult.getPromoAvailableQuantity())) * promoResult.getPromoAvailableQuantity();
+                        promoCartItems.put(product, adjustedQuantity);
+                    }
+                }
+
+                if (promoResult.hasInsufficientPromoStock()) {
+                    boolean userAgrees = inputView.promptUserForRegularPricePurchase(product.getName(), promoResult.getNonPromoQuantity());
+                    if (userAgrees) {
+                        int updatedQuantity = finalQuantity + promoResult.getNonPromoQuantity();
+                        promoCartItems.put(product, updatedQuantity);
+                    } else {
+                        promoCartItems.put(product, promoResult.getPromoAvailableQuantity());
+                    }
+                }
             } else {
-                updatedCartItems.put(product, originalQuantity);
+                promoCartItems.put(product, originalQuantity);
             }
         }
 
-        cartService.setItems(updatedCartItems);
+        cartService.setPromoCartItems(promoCartItems);
     }
-
-
 
     private boolean applyMembership() {
         try {
@@ -115,11 +134,11 @@ public class StoreController {
 
     private void checkoutCart(boolean applyMembership) {
         try {
-            Map<Product, Integer> cartItems = cartService.getItems();
-            Receipt receipt = checkoutService.checkout(cartItems, applyMembership);
+            Map<Product, Integer> cartItems = cartService.getPromoItems();
+            Map<Product, Integer> originalQuantities = cartService.getOriginalItems();
+            Receipt receipt = checkoutService.checkout(cartItems, originalQuantities, applyMembership);
             outputView.displayReceipt(receipt);
 
-            // 장바구니 초기화
             cartService.clearCart();
         } catch (Exception e) {
             outputView.displayError("결제 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
@@ -128,6 +147,7 @@ public class StoreController {
 
     private String getValidatedInput() {
         String input = inputView.readItem();
+        System.out.println();
         InputValidator.validateFormat(input);
         return input;
     }

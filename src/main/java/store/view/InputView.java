@@ -1,6 +1,7 @@
 package store.view;
 
 import camp.nextstep.edu.missionutils.Console;
+import store.common.ErrorMessage;
 import store.common.PrintMessage;
 
 public class InputView {
@@ -28,24 +29,26 @@ public class InputView {
     }
 
     public boolean promptContinueShopping() {
-        System.out.println("감사합니다. 구매하고 싶은 다른 상품이 있나요? (Y/N)");
+        System.out.println(PrintMessage.ADD_PURCHASE_PROMPT.getMessage());
         return getUserConfirmation();
+    }
+
+    public void displayError(String message) {
+        System.out.println("[ERROR] " + message);
     }
 
     private boolean getUserConfirmation() {
         while (true) {
             String response = Console.readLine();
             if ("Y".equals(response)) {
+                System.out.println();
                 return true;
             }
             if ("N".equals(response)) {
+                System.out.println();
                 return false;
             }
-            System.out.println("[ERROR] 잘못된 입력입니다. 'Y' 또는 'N'을 입력해 주세요.");
+            System.out.println(ErrorMessage.GENERIC_INVALID_INPUT.getMessage());
         }
-    }
-
-    public void displayError(String message) {
-        System.out.println("[ERROR] " + message);
     }
 }

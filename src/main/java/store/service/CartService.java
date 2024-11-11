@@ -5,8 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CartService {
-    private Map<Product, Integer> cartItems = new LinkedHashMap<>();
-    private Map<Product, Integer> originalQuantities = new LinkedHashMap<>(); // 원래 수량을 저장하는 필드 추가
+    private Map<Product, Integer> originalCartItems = new LinkedHashMap<>();
+    private Map<Product, Integer> promoCartItems = new LinkedHashMap<>();
 
     private final ProductService productService;
 
@@ -14,31 +14,34 @@ public class CartService {
         this.productService = productService;
     }
 
+    // 원래 수량을 장바구니에 추가
     public void addItemToCart(String productName, int quantity) {
         Product product = productService.findProductByName(productName);
         if (product == null) {
             throw new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다: " + productName);
         }
 
-        // 장바구니와 원래 수량을 모두 업데이트
-        cartItems.put(product, cartItems.getOrDefault(product, 0) + quantity);
-        originalQuantities.put(product, originalQuantities.getOrDefault(product, 0) + quantity); // 원래 수량도 저장
+        originalCartItems.put(product, originalCartItems.getOrDefault(product, 0) + quantity);
     }
 
-    public Map<Product, Integer> getItems() {
-        return new LinkedHashMap<>(cartItems);
+    // 프로모션 적용 후 장바구니를 설정
+    public void setPromoCartItems(Map<Product, Integer> promoItems) {
+        this.promoCartItems = promoItems;
     }
 
-    public Map<Product, Integer> getOriginalQuantities() {
-        return new LinkedHashMap<>(originalQuantities); // 원래 수량을 반환하는 메서드 추가
+    // 원래 수량을 반환
+    public Map<Product, Integer> getOriginalItems() {
+        return new LinkedHashMap<>(originalCartItems);
     }
 
-    public void setItems(Map<Product, Integer> items) {
-        this.cartItems = items;
+    // 프로모션 적용 후 수량을 반환
+    public Map<Product, Integer> getPromoItems() {
+        return new LinkedHashMap<>(promoCartItems);
     }
 
+    // 장바구니 초기화
     public void clearCart() {
-        cartItems.clear();
-        originalQuantities.clear(); // 원래 수량도 초기화
+        originalCartItems.clear();
+        promoCartItems.clear();
     }
 }

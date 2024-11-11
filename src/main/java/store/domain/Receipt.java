@@ -1,3 +1,4 @@
+// Receipt.java
 package store.domain;
 
 import store.common.ReceiptMessage;
@@ -6,25 +7,25 @@ import java.util.List;
 public class Receipt {
     private final List<String> purchaseDetails;
     private final List<String> freeItems;
+    private final int totalOriginalQuantity;
+    private final int totalOriginalAmount;
     private final int totalAmount;
     private final int promotionDiscount;
     private final int membershipDiscount;
     private final int finalAmount;
-    private final int totalQuantity; // 추가: 총 구매 수량
 
-    // 수정된 생성자, 추가 필드 포함
-    public Receipt(List<String> purchaseDetails, List<String> freeItems, int totalAmount, int promotionDiscount,
-                   int membershipDiscount, int finalAmount, int totalQuantity) {
+    public Receipt(List<String> purchaseDetails, List<String> freeItems, int totalOriginalQuantity, int totalOriginalAmount,
+                   int totalAmount, int promotionDiscount, int membershipDiscount, int finalAmount) {
         this.purchaseDetails = purchaseDetails;
         this.freeItems = freeItems;
+        this.totalOriginalQuantity = totalOriginalQuantity;
+        this.totalOriginalAmount = totalOriginalAmount;
         this.totalAmount = totalAmount;
         this.promotionDiscount = promotionDiscount;
         this.membershipDiscount = membershipDiscount;
         this.finalAmount = finalAmount;
-        this.totalQuantity = totalQuantity; // 총 구매 수량 필드 초기화
     }
 
-    // Getters
     public int getTotalAmount() {
         return totalAmount;
     }
@@ -41,16 +42,20 @@ public class Receipt {
         return finalAmount;
     }
 
-    public int getTotalQuantity() {
-        return totalQuantity;
-    } // 총 구매 수량 Getter 추가
-
     public List<String> getPurchaseDetails() {
         return purchaseDetails;
     }
 
     public List<String> getFreeItems() {
         return freeItems;
+    }
+
+    public int getTotalOriginalQuantity() {
+        return totalOriginalQuantity;
+    }
+
+    public int getTotalOriginalAmount() {
+        return totalOriginalAmount;
     }
 
     public String generateReceipt() {
@@ -69,19 +74,13 @@ public class Receipt {
 
         // Free items section
         receipt.append(ReceiptMessage.FREE_ITEMS_HEADER.format()).append("\n");
-        freeItems.stream().distinct().forEach(item -> {
-            String[] itemDetail = item.split("\t");
-            receipt.append(String.format("%-10s\t%2s%n", itemDetail[0], itemDetail[1]));
-        });
+        for (String item : freeItems) {
+            receipt.append(String.format("%-10s\t%2s%n", item.split("\t")[0], item.split("\t")[1]));
+        }
 
-        // Calculate total quantity
-        int totalQuantity = purchaseDetails.stream()
-                .mapToInt(detail -> Integer.parseInt(detail.split("\t")[1].trim()))
-                .sum();
-
-        // Footer with totals (without "원" symbol)
+        // Footer with totals
         receipt.append("==============================\n");
-        receipt.append(String.format("총구매액\t%2d\t%,8d%n", totalQuantity, totalAmount));
+        receipt.append(String.format("총구매액\t%2d\t%,8d%n", totalOriginalQuantity, totalOriginalAmount));
         receipt.append(String.format("행사할인\t\t%8s%n", formatCurrency(-promotionDiscount)));
         receipt.append(String.format("멤버십할인\t\t%8s%n", formatCurrency(-membershipDiscount)));
         receipt.append(String.format("내실돈\t\t%,8d%n", finalAmount));

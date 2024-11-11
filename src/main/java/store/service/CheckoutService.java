@@ -8,33 +8,35 @@ import store.domain.PromotionResult;
 import store.domain.Receipt;
 
 public class CheckoutService {
-    private final ProductService productService;
     private final PromotionService promotionService;
     private final MembershipService membershipService;
 
-    public CheckoutService(ProductService productService, PromotionService promotionService,
-                           MembershipService membershipService) {
-        this.productService = productService;
+    public CheckoutService(PromotionService promotionService, MembershipService membershipService) {
         this.promotionService = promotionService;
         this.membershipService = membershipService;
     }
 
-    public Receipt checkout(Map<Product, Integer> cartItems, boolean applyMembership) {
+    public Receipt checkout(Map<Product, Integer> cartItems, Map<Product, Integer> originalQuantities,
+                            boolean applyMembership) {
         int totalAmount = 0;
         int promotionDiscount = 0;
         int membershipDiscount = 0;
         int finalAmount = 0;
 
-        int totalQuantity = 0; // 실제 구매 의도한 총 수량
+        int totalOriginalQuantity = 0;
+        int totalOriginalAmount = 0;
+
         List<String> purchaseDetails = new ArrayList<>();
         List<String> freeItems = new ArrayList<>();
 
         for (Map.Entry<Product, Integer> entry : cartItems.entrySet()) {
             Product product = entry.getKey();
-            int originalQuantity = entry.getValue();  // 사용자가 요청한 원래 수량
+            int adjustedQuantity = entry.getValue();
+            int originalQuantity = originalQuantities.getOrDefault(product, 0);
             int originalAmount = product.getPrice() * originalQuantity;
 
-            totalQuantity += originalQuantity; // 요청된 원래 총 수량을 합산
+            totalOriginalQuantity += originalQuantity;
+            totalOriginalAmount += originalAmount;
 
             PromotionResult promoResult = promotionService.applyPromotion(product, originalQuantity);
 
@@ -47,10 +49,10 @@ public class CheckoutService {
                 finalAmount += promoResult.getFinalAmount();
 
                 purchaseDetails.add(
-                        String.format("%s\t%d\t%d", product.getName(), promoAvailableQuantity, promoAmount));
+                        String.format("%s\t%d\t%d", product.getName(), totalOriginalQuantity, totalOriginalAmount));
 
                 if (promoResult.getFreeQuantity() > 0) {
-                    freeItems.add(String.format("%s\t%d개", product.getName(), promoResult.getFreeQuantity()));
+                    freeItems.add(String.format("%s\t%d", product.getName(), promoResult.getFreeQuantity()));
                 }
 
                 if (applyMembership && promoResult.getNonPromoQuantity() > 0) {
@@ -65,10 +67,8 @@ public class CheckoutService {
                     totalAmount += nonPromoAmount;
                 }
 
-                productService.decreaseProductStock(product.getName(), originalQuantity);
-
             } else {
-                int amount = product.getPrice() * originalQuantity;
+                int amount = product.getPrice() * adjustedQuantity;
                 totalAmount += amount;
                 finalAmount += amount;
 
@@ -78,13 +78,11 @@ public class CheckoutService {
                     finalAmount -= discount;
                 }
 
-                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), originalQuantity, amount));
-                productService.decreaseProductStock(product.getName(), originalQuantity);
+                purchaseDetails.add(String.format("%s\t%d\t%d", product.getName(), adjustedQuantity, amount));
             }
         }
 
-        // 총 구매 수량은 원래 구매 수량(totalQuantity)을 사용
-        return new Receipt(purchaseDetails, freeItems, totalAmount, promotionDiscount, membershipDiscount, finalAmount,
-                totalQuantity);
+        return new Receipt(purchaseDetails, freeItems, totalOriginalQuantity, totalOriginalAmount, totalAmount,
+                promotionDiscount, membershipDiscount, finalAmount);
     }
 }
